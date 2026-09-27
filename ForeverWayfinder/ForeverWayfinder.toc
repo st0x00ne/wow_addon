@@ -1,0 +1,14 @@
+## Interface: 16001
+## Title: Forever Wayfinder
+## Notes: Spoiler-safe quest markers, Classic chain reference, and gentle zone suggestions for WoW Forever.
+## Author: Forever Wayfinder contributors
+## Version: 0.4.3
+## IconTexture: Interface\AddOns\ForeverWayfinder\Media\Icon
+
+Data\ClassicQuests.lua
+Data\ClassicChainDetails.lua
+Data\QuestOpportunities.lua
+Data\Zones.lua
+Data\VerifiedRewards.lua
+Core.lua
+UI.lua
