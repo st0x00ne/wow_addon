@@ -6,7 +6,7 @@ another player's computer. It is standalone and does not require Questie.
 
 ## Discord message
 
-> **Forever Wayfinder 0.5.2 beta** — a quest companion and personal Discovery Journal for WoW Forever.
+> **Forever Wayfinder 0.5.3 beta** — a quest companion and personal Discovery Journal for WoW Forever.
 > It marks possible new Forever quests without revealing their future steps,
 > labels dungeon quests, shows expandable details for known Classic chains,
 > and suggests a few places to explore next. Classic locations and future
@@ -18,6 +18,9 @@ another player's computer. It is standalone and does not require Questie.
 > on the left and discovery details and notes on the right.
 > Click the compass on your minimap to open the journal. Drag it around the
 > minimap's edge to choose a saved position.
+> This update improves readability across the journal, Chain, and Where next?:
+> larger text, stronger ink, more spacing, and a saved Text size button.
+> Fold personal notes to give a quest's story more room on the right page.
 >
 > Download the attached zip and extract it into
 > `World of Warcraft/_classic_beta_/Interface/AddOns/`. You should end up with
@@ -46,6 +49,10 @@ another player's computer. It is standalone and does not require Questie.
   draft is saved. Search and combine zone, type, class, character, and status filters.
 - Scroll a long quest description and a long personal note; change index pages
   with buttons and the mouse wheel. Check the book fits your UI scale.
+- Try Standard, Large, and Extra Large with the Text button in each Wayfinder
+  screen. Confirm titles, buttons, and long chapter names remain readable.
+- Fold and unfold personal notes, change text size while editing, and confirm
+  the draft and saved size survive `/reload` and a full client restart.
 - Accept and turn in a quest, discover another zone, and revisit a dungeon.
   Confirm events update the correct character's records without duplicate rows.
 - Confirm journal notes and favorites survive `/reload`, logout, and a full

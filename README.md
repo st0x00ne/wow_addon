@@ -48,6 +48,23 @@ For a first in-game persistence check, write a field note, `/reload`, and then
 fully exit and reopen WoW. The note should remain each time. `/fw journal status`
 prints the entry and saved-session counts for troubleshooting.
 
+## Reading options
+
+Use the **Text** button in the journal, Chain, or Where next? panel to cycle
+**Standard**, **Large**, and **Extra Large**. The choice applies across Wayfinder
+and is saved with your journal settings. `/fw text standard`, `/fw text large`,
+and `/fw text extra` select a size directly.
+
+The reading pages use darker ink, larger body text, clearer section headings,
+and more space between lines. Chapter names wrap in wider rows. Hover over an
+index entry for its full title and status. **F** marks a favorite and **R** marks
+a discovery to revisit.
+
+Use **Personal notes · Show / Hide** on the right page to give a quest's story
+more reading space. Folding the editor saves its draft. Field notes open with
+the editor expanded. The book still fits the available screen area; choose a
+larger text preset when using a small window or a low UI scale.
+
 ## Data and limits
 
 The bundled [ClassicQuests.lua](ForeverWayfinder/Data/ClassicQuests.lua) is generated from [QuestieDB's Classic quest data](https://github.com/Questie/QuestieDB/blob/master/data/Classic/classicQuestDB.lua) and its [Forever support XP table](https://github.com/Questie/QuestieDB/blob/master/support/Forever/QuestXP/xpDB-classic.lua). We keep quest ID ranges, unambiguous linear chain segments, linked follow-ups, levels, and XP estimates. [ClassicChainDetails.lua](ForeverWayfinder/Data/ClassicChainDetails.lua) adds step objectives, contact names, approximate locations, prerequisites, and possible item and reputation rewards from the Classic quest, [NPC](https://github.com/Questie/QuestieDB/blob/master/data/Classic/classicNpcDB.lua), [object](https://github.com/Questie/QuestieDB/blob/master/data/Classic/classicObjectDB.lua), and [item](https://github.com/Questie/QuestieDB/blob/master/data/Classic/classicItemDB.lua) tables. [QuestOpportunities.lua](ForeverWayfinder/Data/QuestOpportunities.lua) keeps a smaller subset of quest starter names and coordinates. This addon loads the generated files directly and does not install Questie. The sources are GPL-3.0; this repository includes the [license](LICENSE).
@@ -76,8 +93,12 @@ Run `python tools/test_journal.py` with Lua 5.1 or Fengari available; `--lua PAT
 selects an executable. The tests cover recording, duplicate events, filters,
 notes, character isolation, serialized cold loads, newer-schema protection,
 native-frame interactions, paging, draft preservation, and screen fitting.
+They also cover minimap dragging and position restoration, shared text presets,
+long title wrapping, note folding, and saved reading preferences.
 
 `python tools/render_journal_preview.py --state quest` renders a layout preview
-from the actual mocked frame geometry and needs Pillow. `note` and `empty` are
-also available. It uses substitute fonts and controls; in-game rendering and
+from the actual mocked frame geometry and needs Pillow. `note`, `empty`,
+`chain`, `where`, and `book` are also available. Add `--text-size large` or
+`--text-size extra` to inspect a larger preset. It uses substitute fonts and
+controls; in-game rendering and
 client SavedVariables persistence still need an in-game check.

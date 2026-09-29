@@ -35,7 +35,7 @@ def main() -> None:
     parser.add_argument("--lua")
     args = parser.parse_args()
     executable = lua_executable(args.lua)
-    for name in ("journal_test.lua", "journal_ui_test.lua", "minimap_test.lua"):
+    for name in ("journal_test.lua", "journal_ui_test.lua", "minimap_test.lua", "reading_test.lua"):
         result = run_lua(executable, ROOT / "tests" / name)
         # Fengari's CLI can report Lua errors with exit code zero.
         if result.returncode or "PASS:" not in result.stdout or result.stderr:

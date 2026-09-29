@@ -19,3 +19,8 @@ artwork for Forever Wayfinder. Full-size PNG sources are in `Source/art` in the
 release archive; `JournalBook-prompt.md` records the book's built-in imagegen prompt.
 The visual study used Classic WoW's spellbook and quest-log layouts; no third-party
 addon code or screenshot artwork is embedded in the journal.
+
+The 0.5.3 readability pass also studied the public
+[Forever Journal gallery](https://www.curseforge.com/wow/addons/forever-journal)
+by Uggezen for its dark parchment ink, type hierarchy, and spacing. Wayfinder's
+implementation and illustrated book remain its own work.

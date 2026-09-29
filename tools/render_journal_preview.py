@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 
 from test_journal import ROOT, lua_executable, run_lua
 
@@ -18,6 +19,19 @@ from PIL import Image, ImageDraw, ImageFont
 def rgba(value, default=(0.24, 0.16, 0.08, 1)):
     value = value or default
     return tuple(round(min(1, max(0, x)) * 255) for x in (*value[:3], value[3] if len(value) > 3 else 1))
+
+
+def font_metrics(path):
+    # Measure the substitute preview fonts so the mock lays out the same glyphs.
+    # These measurements are not claims about the native WoW fonts.
+    font_root=Path(os.environ.get("WINDIR", "C:/Windows"))/"Fonts"
+    glyphs="".join(chr(i) for i in range(32,127))+"·›‹∞◆–—•"
+    tables=[]
+    for role,face in (("bold","georgiab.ttf"),("regular","georgia.ttf")):
+        font=ImageFont.truetype(str(font_root/face),100)
+        values=",".join(f"[{json.dumps(g,ensure_ascii=False)}]={font.getlength(g)/100:.5f}" for g in glyphs)
+        tables.append(f"{role}={{{values}}}")
+    path.write_text("return {"+",".join(tables)+"}",encoding="utf-8")
 
 
 def render(nodes, output):
@@ -83,9 +97,9 @@ def render(nodes, output):
                     else:
                         line=candidate
                 lines.append(line)
-            line_height = size * 1.18
+            line_height = size * 1.18 + (node.get("spacing") or 0)
             for i,line in enumerate(lines):
-                if (i+1)*line_height > h+2:
+                if i*line_height + size*1.18 > h+2:
                     break
                 tx = x
                 if is_native_button or node.get("justify") == "CENTER": tx += (w-draw.textlength(line,font=font))/2
@@ -103,10 +117,15 @@ def render(nodes, output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua")
-    parser.add_argument("--state",choices=("quest","note","empty"),default="quest")
+    parser.add_argument("--state",choices=("quest","note","empty","chain","where","book"),default="quest")
+    parser.add_argument("--text-size",choices=("standard","large","extra"),default="standard")
     parser.add_argument("--output",type=Path,default=ROOT/"dist/journal-layout-preview.png")
     args=parser.parse_args()
-    result=run_lua(lua_executable(args.lua),ROOT/"tests/journal_ui_test.lua","preview",args.state)
+    script="reading_test.lua" if args.state in ("chain","where","book") else "journal_ui_test.lua"
+    with tempfile.TemporaryDirectory(prefix="fw-reading-preview-") as folder:
+        metrics=Path(folder)/"font-metrics.lua"
+        font_metrics(metrics)
+        result=run_lua(lua_executable(args.lua),ROOT/"tests"/script,"preview",args.state,args.text_size,metrics.as_posix())
     if result.returncode or result.stderr:
         raise SystemExit(result.stdout+result.stderr)
     nodes=json.loads(result.stdout)

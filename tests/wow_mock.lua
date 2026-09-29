@@ -11,6 +11,7 @@ function mock.object(kind,name,parent,template,layer)
   return value
 end
 function CreateFrame(kind,name,parent,template) return mock.object(kind,name,parent,template) end
+function CreateFont(name) return mock.object("Font",name) end
 function methods:CreateTexture(name,layer) return mock.object("Texture",name,self,nil,layer) end
 function methods:CreateMaskTexture() return mock.object("MaskTexture",nil,self) end
 function methods:AddMaskTexture(mask) self.mask=mask end
@@ -34,6 +35,7 @@ function methods:GetWidth()
 end
 function methods:GetHeight()
   if self.allPoints then return self.allPoints:GetHeight() end
+  if self.kind=="FontString" and self.height==0 then return self:GetStringHeight() end
   if self.height then return self.height end
   local top,bottom=self.points.TOPLEFT,self.points.BOTTOMRIGHT
   if top and bottom and top.relative==bottom.relative then return top.relative:GetHeight()+top.y-bottom.y end
@@ -55,15 +57,43 @@ function methods:SetText(value)
 end
 function methods:GetText() return self.text end
 function methods:SetFontObject(font) self.font=font end
+function methods:GetFont()
+  if type(self.font)=="table" then return self.font:GetFont() end
+  local heading=self.font=="QuestFont_Large"
+  return self.fontFile or (heading and "Fonts\\MORPHEUS.TTF" or STANDARD_TEXT_FONT),self.fontSize or 12,self.fontFlags or ""
+end
+function methods:SetNormalFontObject(font) self.normalFont=font end
+function methods:SetHighlightFontObject(font) self.highlightFont=font end
+function methods:SetDisabledFontObject(font) self.disabledFont=font end
+function methods:SetShadowOffset(x,y) self.shadow={x,y} end
+function methods:SetSpacing(value) self.spacing=value end
 function methods:SetFont(file,size,flags) self.fontFile,self.fontSize,self.fontFlags=file,size,flags end
 function methods:GetStringHeight()
   local t=self.text:gsub("|T.-|t","   "):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
   local h=self.fontSize or ((self.font=="QuestFont_Large" or self.font=="GameFontNormalLarge") and 20 or 12)
   local lines=0
-  for p in (t.."\n"):gmatch("(.-)\n") do
-    lines=lines+(self.wrap==false and 1 or math.max(1,math.ceil(#p*h*0.47/self:GetWidth())))
+  local bold=self.font=="QuestFont_Large" or self.font=="GameFontNormalLarge" or self.font=="GameFontNormal"
+  local metrics=mock.fontMetrics and mock.fontMetrics[bold and "bold" or "regular"]
+  local function width(text)
+    if not metrics then return #text*h*.47 end
+    local value=0
+    for glyph in text:gmatch("[\1-\127\194-\244][\128-\191]*") do value=value+(metrics[glyph] or .6)*h end
+    return value
   end
-  return lines*h*1.15
+  for p in (t.."\n"):gmatch("(.-)\n") do
+    if not metrics or self.wrap==false then
+      lines=lines+(self.wrap==false and 1 or math.max(1,math.ceil(#p*h*.47/self:GetWidth())))
+    else
+      local rowWidth,rowCount=0,1
+      for word in p:gmatch("%S+") do
+        local nextWidth=width(word)+(rowWidth>0 and width(" ") or 0)
+        if rowWidth>0 and rowWidth+nextWidth>self:GetWidth() then rowCount=rowCount+1; rowWidth=width(word)
+        else rowWidth=rowWidth+nextWidth end
+      end
+      lines=lines+rowCount
+    end
+  end
+  return lines*h*(metrics and 1.18 or 1.15)+math.max(0,lines-1)*(self.spacing or 0)
 end
 function methods:SetTextColor(...) self.color={...} end
 function methods:SetColorTexture(...) self.color={...}; self.texture=nil end
@@ -221,6 +251,7 @@ function mock.load(root, withUI)
     assert(loadfile(root.."/ForeverWayfinder/"..file))("ForeverWayfinder",addon)
   end
   if withUI then
+    assert(loadfile(root.."/ForeverWayfinder/ReadingStyle.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/UI.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/JournalUI.lua"))("ForeverWayfinder",addon)
   end

@@ -2,22 +2,24 @@
 -- Pre-emit critique: P5 H5 E5 S5 R4 V5 · original book artwork, native fonts/controls
 local _, addon = ...
 local journal = addon.Journal
+local style = addon.ReadingStyle
 local book, refreshPending
-local WIDTH, HEIGHT, BOOK_TOP, BOOK_HEIGHT, PAGE_SIZE, ZONE_SIZE = 1040, 780, 140, 640, 5, 10
+local WIDTH, HEIGHT, BOOK_TOP, BOOK_HEIGHT, PAGE_SIZE, ZONE_SIZE = 1040, 808, 168, 640, 5, 6
 local state = {filters = {}, page = 1, zonePage = 1, view = "all", loading = false}
 local ink = {
-  title = {0.22, 0.11, 0.045}, body = {0.25, 0.17, 0.09}, muted = {0.40, 0.29, 0.17},
+  title = {0.19, 0.085, 0.03}, body = {0.16, 0.095, 0.04}, muted = {0.28, 0.18, 0.085},
   gold = {1.00, 0.82, 0.40}, pale = {0.85, 0.73, 0.53}, leather = {0.16, 0.09, 0.04},
   edge = {0.48, 0.32, 0.13}, header = {0.11, 0.055, 0.025}, selected = {0.48, 0.29, 0.10, 0.24},
   hover = {0.51, 0.33, 0.12, 0.12}, paper = {0.88, 0.78, 0.56, 0.88},
-  success = {0.15, 0.32, 0.12}, link = {0.10, 0.30, 0.34}, error = {0.62, 0.12, 0.07},
+  success = {0.12, 0.27, 0.08}, link = {0.045, 0.22, 0.26}, error = {0.62, 0.12, 0.07},
   headerSuccess = {0.69, 0.83, 0.49}, headerError = {1.00, 0.54, 0.35},
 }
 local typeNames = {quest = "Quest", exploration = "Exploration", dungeon = "Dungeon visit", note = "Field note", milestone = "Milestone"}
 local statusNames = {active = "In your log", completed = "Completed", archived = "Left quest log", visited = "Visited", noted = "Personal note", earned = "Milestone"}
 local icons = {quest = "Interface\\Icons\\INV_Misc_Scroll_03", exploration = "Interface\\Icons\\INV_Misc_Map_01",
   dungeon = "Interface\\Icons\\INV_Misc_Key_03", note = "Interface\\Icons\\INV_Misc_Note_01", milestone = "Interface\\Icons\\INV_Misc_EngGizmos_12"}
-local render, selectEntry, saveDraft, createBook
+local render, selectEntry, saveDraft, createBook, layoutNotes
+local fontRoles = {[10]="meta", [11]="label", [12]="control", [13]="entry", [14]="body"}
 
 local function color(region, value, texture)
   if texture then region:SetColorTexture(value[1], value[2], value[3], value[4] or 1)
@@ -26,7 +28,7 @@ end
 
 local function font(parent, size, value, x, y, width, object)
   local label = parent:CreateFontString(nil, "ARTWORK", object or "GameFontHighlightSmall")
-  if size then label:SetFont(STANDARD_TEXT_FONT, size) end
+  style.Font(label, fontRoles[size] or (object == "GameFontNormalLarge" and "display" or "title"))
   label:SetPoint("TOPLEFT", x, -y)
   label:SetWidth(width)
   label:SetJustifyH("LEFT")
@@ -58,8 +60,9 @@ end
 local function button(parent, title, x, y, width, onClick)
   local control = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
   control:SetPoint("TOPLEFT", x, -y)
-  control:SetSize(width, 24)
+  control:SetSize(width, 30)
   control:SetText(title)
+  style.Button(control)
   control:SetScript("OnClick", onClick)
   return control
 end
@@ -78,10 +81,10 @@ end
 local function input(parent, x, y, width, height, multiline, maxLetters)
   local shell = plate(parent, x, y, width, height, ink.paper)
   local edit = CreateFrame("EditBox", nil, shell)
-  edit:SetPoint("TOPLEFT", 8, -6)
-  edit:SetPoint("BOTTOMRIGHT", -8, 6)
+  edit:SetPoint("TOPLEFT", 8, -4)
+  edit:SetPoint("BOTTOMRIGHT", -8, 4)
   edit:SetAutoFocus(false)
-  edit:SetFontObject(GameFontHighlightSmall)
+  style.Font(edit, "control")
   edit:SetTextColor(ink.body[1], ink.body[2], ink.body[3])
   edit:SetMaxLetters(maxLetters or 240)
   edit:SetMultiLine(multiline or false)
@@ -141,9 +144,9 @@ end
 local function changedDraft()
   if state.loading or not state.selectedID then return end
   state.dirty = true
-  book.deleteArmed = nil; book.delete:SetText("Delete note")
+  book.deleteArmed = nil; book.delete:SetText("Delete")
   book.save:SetEnabled(true)
-  feedback("Unsaved notes · Save or leave the field to keep them", false)
+  feedback("Unsaved notes · Save to keep them", false)
 end
 
 local function resetPages()
@@ -171,7 +174,7 @@ local function showMenu(owner, field, options)
   menu.owner, menu.options, menu.field, menu.offset = owner, options, field, 0
   local function drawMenu()
     local count = math.min(10, #menu.options)
-    menu:SetHeight(count * 25 + 12)
+    menu:SetHeight(count * 30 + 12)
     for i, row in ipairs(menu.rows) do
       local option = menu.options[i + menu.offset]
       row:SetShown(i <= count and option ~= nil)
@@ -193,17 +196,17 @@ local function showMenu(owner, field, options)
 end
 
 local function filter(parent, field, label, x, width, choices)
-  font(parent, 10, ink.pale, x + 3, 91, width):SetText(label)
+  font(parent, 10, ink.pale, x + 3, 106, width):SetText(label)
   local control = CreateFrame("Button", nil, parent, "BackdropTemplate")
-  control:SetPoint("TOPLEFT", x, -104)
-  control:SetSize(width, 25)
+  control:SetPoint("TOPLEFT", x, -124)
+  control:SetSize(width, 32)
   control:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     edgeSize = 10, insets = {left = 2, right = 2, top = 2, bottom = 2}})
   control:SetBackdropColor(ink.leather[1], ink.leather[2], ink.leather[3], 0.95)
   control:SetBackdropBorderColor(ink.edge[1], ink.edge[2], ink.edge[3], 1)
-  control.label = font(control, 11, ink.gold, 8, 7, width - 24)
+  control.label = font(control, 11, ink.gold, 8, 8, width - 24)
   control.label:SetWordWrap(false)
-  font(control, 11, ink.pale, width - 16, 7, 12):SetText("v")
+  font(control, 11, ink.pale, width - 16, 8, 12):SetText("v")
   control.field, control.defaultLabel, control.choices = field,
     field == "status" and "Any status" or "All " .. string.lower(label), choices
   control:SetScript("OnClick", function()
@@ -231,24 +234,34 @@ end
 
 local function entryRow(index)
   local row = CreateFrame("Button", nil, book.leftPage)
-  row:SetPoint("TOPLEFT", 220, -116 - (index - 1) * 86)
-  row:SetSize(282, 78)
-  row.bg = rectangle(row, 0, 0, 282, 78, {0, 0, 0, 0})
-  rectangle(row, 0, 77, 282, 1, {0.46, 0.32, 0.14, 0.30}, "BORDER")
+  row:SetPoint("TOPLEFT", 240, -116 - (index - 1) * 86)
+  row:SetSize(262, 78)
+  row.bg = rectangle(row, 0, 0, 262, 78, {0, 0, 0, 0})
+  rectangle(row, 0, 77, 262, 1, {0.46, 0.32, 0.14, 0.30}, "BORDER")
   row.icon = row:CreateTexture(nil, "ARTWORK")
   row.icon:SetPoint("TOPLEFT", 7, -9)
-  row.icon:SetSize(27, 27)
-  row.title = font(row, 13, ink.title, 43, 8, 229)
-  row.title:SetHeight(31)
-  row.meta = font(row, 10, ink.muted, 43, 43, 229)
+  row.icon:SetSize(30, 30)
+  row.title = font(row, 13, ink.title, 43, 8, 209)
+  row.title:SetHeight(44)
+  row.title:SetJustifyV("TOP")
+  row.meta = font(row, 10, ink.muted, 43, 56, 209)
   row.meta:SetWordWrap(false)
-  row.mark = font(row, 10, ink.link, 7, 44, 28)
+  row.mark = font(row, 10, ink.link, 16, 51, 20)
   row:SetScript("OnEnter", function()
     if row.entry and row.entry.id ~= state.selectedID then color(row.bg, ink.hover, true) end
+    if row.entry then
+      GameTooltip:SetOwner(row, "ANCHOR_RIGHT"); GameTooltip:SetText(row.entry.title)
+      GameTooltip:AddLine(row.entry.zone .. " · " .. (statusNames[row.entry.status] or typeNames[row.entry.kind] or "Discovery"), .9, .8, .6, true)
+      if row.entry.revisit then GameTooltip:AddLine("Marked to revisit", .7, .9, .8) end
+      if row.entry.favorite then GameTooltip:AddLine("Favorite discovery", 1, .82, .4) end
+      GameTooltip:Show()
+    end
   end)
   row:SetScript("OnLeave", function()
     color(row.bg, row.entry and row.entry.id == state.selectedID and ink.selected or {0, 0, 0, 0}, true)
+    GameTooltip:Hide()
   end)
+  row:SetScript("OnHide", function(self) if GameTooltip.IsOwned and GameTooltip:IsOwned(self) then GameTooltip:Hide() end end)
   row:SetScript("OnMouseDown", function() row.title:SetAlpha(0.65) end)
   row:SetScript("OnMouseUp", function() row.title:SetAlpha(1) end)
   row:SetScript("OnClick", function() if row.entry then selectEntry(row.entry.id, true) end end)
@@ -267,11 +280,11 @@ local function detailLine(text, value, large, itemID)
   line:ClearAllPoints()
   line:SetPoint("TOPLEFT", 0, -book.detailHeight)
   line:SetWidth(419)
-  line:SetFontObject(large and (QuestFont_Large or GameFontNormalLarge) or (QuestFontNormalSmall or GameFontHighlightSmall))
+  style.Font(line, large and "heading" or "body")
   line:SetText(text)
   color(line, value or ink.body)
   line:Show()
-  local height = math.max(17, line:GetStringHeight())
+  local height = math.max(style.Size("body") + 3, line:GetStringHeight())
   local target = book.detailTargets[index]
   if itemID then
     if not target then target = CreateFrame("Button", nil, book.detailChild); book.detailTargets[index] = target end
@@ -293,8 +306,8 @@ local function detailLine(text, value, large, itemID)
 end
 
 local function heading(value)
-  book.detailHeight = book.detailHeight + 7
-  detailLine(value, ink.title)
+  book.detailHeight = book.detailHeight + 10
+  detailLine(value, ink.title, true)
 end
 
 local function renderDetails(entry, resetScroll)
@@ -306,8 +319,9 @@ local function renderDetails(entry, resetScroll)
   if not entry then feedback(""); return end
   if book.detailID ~= entry.id then
     book.detailID, book.deleteArmed = entry.id, nil
-    book.delete:SetText("Delete note")
+    book.delete:SetText("Delete")
     book.noteScroll:SetVerticalScroll(0)
+    state.notesExpanded = entry.kind == "note" or (entry.note ~= nil and entry.note ~= "")
   end
   book.entryTitle:SetText(entry.title or "Untitled discovery")
   book.entryTitle:SetShown(entry.kind ~= "note")
@@ -369,7 +383,7 @@ local function renderDetails(entry, resetScroll)
     and C_QuestLog.GetLogIndexForQuestID(entry.questID)
   book.quest:SetEnabled(active and true or false)
   book.chain:SetEnabled(entry.questID and addon.GetClassicChain(entry.questID) ~= nil or false)
-  book.delete:SetShown(entry.kind == "note")
+  book.delete:SetShown(entry.kind == "note" and state.notesExpanded)
   if not state.dirty then
     state.loading = true
     if book.noteTitle:GetText() ~= (entry.title or "") then book.noteTitle:SetText(entry.title or "") end
@@ -378,6 +392,7 @@ local function renderDetails(entry, resetScroll)
     state.loading = false
     book.save:SetEnabled(false)
   end
+  layoutNotes()
 end
 
 selectEntry = function(id, animate)
@@ -385,7 +400,7 @@ selectEntry = function(id, animate)
   if not saveDraft(true) then return end
   state.selectedID, state.dirty = id, false
   book.deleteArmed = nil
-  book.delete:SetText("Delete note")
+  book.delete:SetText("Delete")
   feedback("")
   render(true)
   if animate then pageTurn() end
@@ -432,6 +447,37 @@ local function fitBook()
   book:SetScale(math.max(0.1, math.min(1, (UIParent:GetWidth() - 24) / WIDTH, (UIParent:GetHeight() - 24) / HEIGHT)))
 end
 
+layoutNotes = function()
+  if not book or not book.notesToggle then return end
+  local expanded = state.notesExpanded
+  local entry = journal.Entry(state.selectedID)
+  local titleHeight = entry and entry.kind == "note" and book.noteTitle.shell:GetHeight()
+    or math.max(28, book.entryTitle:GetStringHeight())
+  local metaY = 77 + titleHeight + 10
+  local ruleY = metaY + math.max(18, book.entryMeta:GetStringHeight()) + 12
+  local detailY = ruleY + 12
+  book.entryMeta:ClearAllPoints(); book.entryMeta:SetPoint("TOPLEFT", 33, -metaY)
+  book.detailRule:ClearAllPoints(); book.detailRule:SetPoint("TOPLEFT", 31, -ruleY)
+  book.detailScroll:ClearAllPoints(); book.detailScroll:SetPoint("TOPLEFT", 34, -detailY)
+  local actionY = expanded and 365 or 505
+  local toggleY = expanded and 404 or 548
+  book.detailScroll:SetHeight(math.max(60, (expanded and 360 or 500) - detailY))
+  for _, item in ipairs({{book.favorite,30},{book.revisit,124},{book.map,215},{book.quest,282},{book.chain,383}}) do
+    item[1]:ClearAllPoints(); item[1]:SetPoint("TOPLEFT", item[2], -actionY)
+  end
+  for _, control in ipairs({book.favorite,book.revisit}) do
+    control.label:ClearAllPoints(); control.label:SetPoint("TOPLEFT", control, "TOPRIGHT", 3, -6)
+  end
+  book.notesToggle:ClearAllPoints(); book.notesToggle:SetPoint("TOPLEFT", 30, -toggleY)
+  book.notesToggle:SetText(expanded and "Personal notes · Hide" or "Personal notes · Show")
+  book.noteShell:SetShown(expanded); book.tagsLabel:SetShown(expanded)
+  book.tags.shell:SetShown(expanded); book.save:SetShown(expanded)
+  book.delete:SetShown(expanded and entry and entry.kind == "note")
+  -- The description can become shorter than its old scroll offset after folding notes.
+  book.detailScroll:SetVerticalScroll(math.min(book.detailScroll:GetVerticalScroll(),
+    math.max(0, book.detailChild:GetHeight() - book.detailScroll:GetHeight())))
+end
+
 createBook = function()
   if book then return end
   book = CreateFrame("Frame", "ForeverWayfinderJournalFrame", UIParent)
@@ -447,21 +493,26 @@ createBook = function()
   art:SetAllPoints(book.body)
   art:SetTexture("Interface\\AddOns\\ForeverWayfinder\\Media\\JournalBook")
   book.art = art
-  book.header = plate(book, 16, 0, WIDTH - 32, 134, ink.leather)
+  book.header = plate(book, 16, 0, WIDTH - 32, 162, ink.leather)
   local header = book.header
   rectangle(header, 7, 7, 994, 33, ink.header)
   rectangle(header, 24, 41, 960, 1, ink.edge, "BORDER")
   local icon = header:CreateTexture(nil, "ARTWORK")
   icon:SetPoint("TOPLEFT", 24, -8); icon:SetSize(30, 30)
   icon:SetTexture("Interface\\AddOns\\ForeverWayfinder\\Media\\Icon")
-  font(header, nil, ink.gold, 68, 12, 520, "GameFontNormalLarge"):SetText("Discovery Journal")
-  book.summary = font(header, 11, ink.pale, 596, 19, 340)
+  font(header, nil, ink.gold, 68, 5, 465, "GameFontNormalLarge"):SetText("Discovery Journal")
+  book.textSize = button(header, "Text: " .. style.Name(), 548, 8, 172, function()
+    if saveDraft(true) then style.Cycle() end
+  end)
+  tooltip(book.textSize, "Reading text size", "Cycles Standard, Large, and Extra Large for all Wayfinder screens. Your choice is saved.")
+  book.summary = font(header, 10, ink.pale, 730, 17, 224)
   book.summary:SetJustifyH("RIGHT")
+  book.summary:SetWordWrap(false)
   local close = CreateFrame("Button", nil, header, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -8, -4)
   close:SetScript("OnClick", function() book:Hide() end)
   local handle = CreateFrame("Frame", nil, header)
-  handle:SetPoint("TOPLEFT", 64, 4); handle:SetSize(866, 40)
+  handle:SetPoint("TOPLEFT", 64, 4); handle:SetSize(466, 40)
   handle:EnableMouse(true); handle:RegisterForDrag("LeftButton")
   handle:SetScript("OnDragStart", function() book:StartMoving() end)
   handle:SetScript("OnDragStop", function()
@@ -479,15 +530,15 @@ createBook = function()
   local pages = book.leftPage
   font(book.body, 11, ink.pale, 52, 22, 448):SetText("CHAPTER INDEX")
   local rightCaption = font(book.body, 11, ink.pale, 782, 22, 207)
-  rightCaption:SetJustifyH("RIGHT"); rightCaption:SetText("DISCOVERY & FIELD NOTES")
-  font(pages, 12, ink.title, 52, 77, 149, "GameFontNormal"):SetText("YOUR JOURNEY")
+  rightCaption:SetJustifyH("RIGHT"); rightCaption:SetText("DISCOVERY & NOTES")
+  font(pages, 12, ink.title, 52, 77, 170, "GameFontNormal"):SetText("YOUR JOURNEY")
   book.views = {}
   for i, view in ipairs({{"all", "All discoveries"}, {"favorite", "Favorites"}, {"revisit", "Revisit"}}) do
     local key = view[1]
     local ribbon = CreateFrame("Button", nil, pages)
-    ribbon:SetPoint("TOPLEFT", 49, -102 - (i - 1) * 29); ribbon:SetSize(151, 26)
-    ribbon.bg = rectangle(ribbon, 0, 0, 151, 26, {0.26, 0.12, 0.06, 0.12})
-    ribbon.label = font(ribbon, 12, ink.title, 9, 7, 135)
+    ribbon:SetPoint("TOPLEFT", 49, -102 - (i - 1) * 32); ribbon:SetSize(172, 28)
+    ribbon.bg = rectangle(ribbon, 0, 0, 172, 28, {0.26, 0.12, 0.06, 0.12})
+    ribbon.label = font(ribbon, 12, ink.title, 9, 6, 156)
     ribbon.label:SetText(view[2])
     ribbon:SetScript("OnClick", function()
       if not saveDraft(true) then return end
@@ -497,8 +548,8 @@ createBook = function()
     end)
     book.views[key] = ribbon
   end
-  font(header, 10, ink.pale, 27, 46, 850):SetText("SEARCH YOUR JOURNEY · names, places, people, quest text, tags, and notes")
-  book.search = input(header, 24, 59, 884, 25, false, 160)
+  font(header, 10, ink.pale, 27, 46, 550):SetText("Search discoveries, places, people, and notes")
+  book.search = input(header, 24, 65, 884, 32, false, 160)
   book.search:SetScript("OnTextChanged", function(self)
     if state.loading then return end
     if not saveDraft(true) then return end
@@ -507,7 +558,7 @@ createBook = function()
   end)
   book.search:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
   tooltip(book.search.shell, "Search your journey", "Every word must match. Search quest names, NPCs, descriptions, notes, tags, or quest IDs.")
-  book.reset = button(header, "Reset", 916, 59, 68, clearFilters)
+  book.reset = button(header, "Reset", 916, 65, 68, clearFilters)
   book.filters = {
     filter(header, "kind", "Types", 24, 150, {{value="quest",label="Quests"},{value="exploration",label="Exploration"},
       {value="dungeon",label="Dungeon visits"},{value="note",label="Field notes"},{value="milestone",label="Milestones"}}),
@@ -523,24 +574,24 @@ createBook = function()
   book.menu.rows = {}
   for i = 1, 10 do
     local row = CreateFrame("Button", nil, book.menu)
-    row:SetPoint("TOPLEFT", 6, -6 - (i - 1) * 25); row:SetPoint("TOPRIGHT", -6, -6 - (i - 1) * 25); row:SetHeight(25)
-    row.label = font(row, 11, ink.gold, 6, 7, 174)
-    row.hover = rectangle(row, 0, 0, 184, 25, {0.80, 0.55, 0.20, 0.15}); row.hover:Hide()
+    row:SetPoint("TOPLEFT", 6, -6 - (i - 1) * 30); row:SetPoint("TOPRIGHT", -6, -6 - (i - 1) * 30); row:SetHeight(30)
+    row.label = font(row, 11, ink.gold, 6, 8, 174)
+    row.hover = rectangle(row, 0, 0, 184, 30, {0.80, 0.55, 0.20, 0.15}); row.hover:Hide()
     row:SetScript("OnEnter", function() row.hover:Show() end)
     row:SetScript("OnLeave", function() row.hover:Hide() end)
     book.menu.rows[i] = row
   end
   book.menu:Hide()
-  font(pages, 11, ink.title, 52, 202, 149, "GameFontNormal"):SetText("ZONE CHAPTERS")
-  rectangle(pages, 52, 222, 145, 1, {0.43, 0.29, 0.12, 0.4}, "BORDER")
+  font(pages, 11, ink.title, 52, 207, 170, "GameFontNormal"):SetText("ZONE CHAPTERS")
+  rectangle(pages, 52, 226, 166, 1, {0.43, 0.29, 0.12, 0.4}, "BORDER")
   book.zoneRows = {}
   for i = 1, ZONE_SIZE do
     local row = CreateFrame("Button", nil, pages)
-    row:SetPoint("TOPLEFT", 49, -231 - (i - 1) * 27); row:SetSize(151, 26)
-    row.bg = rectangle(row, 0, 0, 151, 26, {0,0,0,0})
-    row.label = font(row, 11, ink.body, 7, 7, 114)
-    row.label:SetWordWrap(false)
-    row.count = font(row, 10, ink.muted, 124, 8, 23); row.count:SetJustifyH("RIGHT")
+    row:SetPoint("TOPLEFT", 49, -235 - (i - 1) * 44); row:SetSize(172, 42)
+    row.bg = rectangle(row, 0, 0, 172, 42, {0,0,0,0})
+    row.label = font(row, 11, ink.body, 7, 4, 140)
+    row.label:SetWordWrap(true); row.label:SetHeight(38); row.label:SetJustifyV("TOP")
+    row.count = font(row, 10, ink.muted, 148, 5, 20); row.count:SetJustifyH("RIGHT")
     row:SetScript("OnClick", function() changeFilter("zoneKey", row.key) end)
     row:SetScript("OnEnter", function()
       if row.key ~= state.filters.zoneKey then color(row.bg, ink.hover, true) end
@@ -551,25 +602,25 @@ createBook = function()
     end)
     book.zoneRows[i] = row
   end
-  book.zonePrev = button(pages, "<", 52, 516, 34, function() state.zonePage=math.max(1,state.zonePage-1); render() end)
-  book.zoneNext = button(pages, ">", 166, 516, 34, function() state.zonePage=state.zonePage+1; render() end)
-  book.zonePage = font(pages, 10, ink.muted, 90, 524, 70); book.zonePage:SetJustifyH("CENTER")
-  button(pages, "+ Field note", 52, 553, 148, function()
+  book.zonePrev = button(pages, "<", 52, 516, 38, function() state.zonePage=math.max(1,state.zonePage-1); render() end)
+  book.zoneNext = button(pages, ">", 183, 516, 38, function() state.zonePage=state.zonePage+1; render() end)
+  book.zonePage = font(pages, 10, ink.muted, 94, 524, 85); book.zonePage:SetJustifyH("CENTER")
+  button(pages, "+ Field note", 52, 553, 169, function()
     if not saveDraft(true) then return end
     clearFilters()
     local entry = journal.NewNote()
     if entry then selectEntry(entry.id, true); book.noteTitle:SetFocus(); book.noteTitle:HighlightText() end
   end)
-  book.indexTitle = font(pages, nil, ink.title, 220, 77, 282, "QuestFont_Large")
+  book.indexTitle = font(pages, nil, ink.title, 240, 77, 262, "QuestFont_Large")
   book.rows = {}
   for i = 1, PAGE_SIZE do book.rows[i] = entryRow(i) end
-  book.empty = font(pages, 13, ink.muted, 234, 145, 256)
+  book.empty = font(pages, 13, ink.muted, 250, 145, 244)
   book.empty:SetText("No discoveries match these filters.\n\nTry Reset, or start a field note.")
-  book.prev = button(pages, "< Previous", 220, 553, 92, function() changePage(-1) end)
-  book.next = button(pages, "Next >", 410, 553, 92, function() changePage(1) end)
-  book.pageLabel = font(pages, 10, ink.muted, 315, 561, 92); book.pageLabel:SetJustifyH("CENTER")
+  book.prev = button(pages, "< Prev", 240, 553, 88, function() changePage(-1) end)
+  book.next = button(pages, "Next >", 414, 553, 88, function() changePage(1) end)
+  book.pageLabel = font(pages, 10, ink.muted, 332, 561, 78); book.pageLabel:SetJustifyH("CENTER")
   local wheel = CreateFrame("Frame", nil, pages)
-  wheel:SetPoint("TOPLEFT", 216, -108); wheel:SetSize(291, 436); wheel:EnableMouseWheel(true)
+  wheel:SetPoint("TOPLEFT", 236, -108); wheel:SetSize(271, 436); wheel:EnableMouseWheel(true)
   wheel:SetScript("OnMouseWheel", function(_, delta) changePage(delta > 0 and -1 or 1) end)
   -- Rows stay above the wheel surface and handle their own clicks.
   wheel:SetFrameLevel(pages:GetFrameLevel() + 1)
@@ -580,21 +631,23 @@ createBook = function()
   end
   book.selected = CreateFrame("Frame", nil, book.rightPage); book.selected:SetAllPoints(book.rightPage)
   book.entryTitle = font(book.selected, nil, ink.title, 33, 77, 433, "QuestFont_Large")
-  book.entryTitle:SetHeight(45)
-  book.noteTitle = input(book.selected, 30, 77, 438, 30, false, 160)
+  book.entryTitle:SetHeight(0); book.entryTitle:SetJustifyV("TOP"); book.entryTitle:SetWordWrap(true)
+  book.noteTitle = input(book.selected, 30, 77, 438, 36, false, 160)
   book.noteTitle:SetScript("OnTextChanged", changedDraft); book.noteTitle.shell.saveOnBlur = true
   book.noteTitle:SetScript("OnEnterPressed", function(self) self:ClearFocus(); book.note:SetFocus() end)
-  book.entryMeta = font(book.selected, 10, ink.muted, 33, 125, 431)
-  rectangle(book.selected, 31, 144, 434, 1, {0.43, 0.29, 0.12, 0.4}, "BORDER")
+  book.entryMeta = font(book.selected, 10, ink.muted, 33, 137, 431)
+  book.entryMeta:SetHeight(34); book.entryMeta:SetJustifyV("TOP")
+  book.detailRule = rectangle(book.selected, 31, 175, 434, 1, {0.43, 0.29, 0.12, 0.4}, "BORDER")
   book.detailScroll = CreateFrame("ScrollFrame", nil, book.selected, "UIPanelScrollFrameTemplate")
-  book.detailScroll:SetPoint("TOPLEFT", 34, -154); book.detailScroll:SetSize(419, 204)
+  book.detailScroll:SetPoint("TOPLEFT", 34, -184); book.detailScroll:SetSize(419, 176)
   book.detailChild = CreateFrame("Frame", nil, book.detailScroll); book.detailChild:SetSize(419, 1)
   book.detailScroll:SetScrollChild(book.detailChild)
   book.detailLines, book.detailTargets = {}, {}
   local function check(label, field, x)
     local control = CreateFrame("CheckButton", nil, book.selected, "UICheckButtonTemplate")
-    control:SetPoint("TOPLEFT", x, -370); control:SetSize(21, 21)
-    local title = font(book.selected, 10, ink.title, x + 23, 376, 66); title:SetText(label)
+    control:SetPoint("TOPLEFT", x, -365); control:SetSize(23, 23)
+    local title = font(control, 10, ink.title, 26, 6, 66); title:SetText(label)
+    control.label = title
     control:SetScript("OnClick", function() saveDraft(true); journal.Toggle(state.selectedID, field); render() end)
     return control
   end
@@ -614,16 +667,23 @@ createBook = function()
     if entry and entry.questID and addon.ShowClassicChain then saveDraft(true); book:Hide(); addon.ShowClassicChain(entry.questID) end
   end)
   tooltip(book.chain, "Classic chain reference", "Opens Wayfinder's existing Classic chain panel. Forever may change these steps.")
-  font(book.selected, 11, ink.title, 33, 410, 430, "GameFontNormal"):SetText("IN YOUR OWN WORDS")
-  local noteShell = plate(book.selected, 30, 428, 438, 121, {0.89, 0.79, 0.57, 0.78})
+  book.notesToggle = button(book.selected, "Personal notes · Hide", 30, 404, 240, function()
+    if not saveDraft(true) then return end
+    state.notesExpanded = not state.notesExpanded
+    if not state.notesExpanded then book.note:ClearFocus(); book.tags:ClearFocus() end
+    layoutNotes()
+  end)
+  local noteShell = plate(book.selected, 30, 441, 438, 102, {0.93, 0.85, 0.66, 0.93})
+  book.noteShell = noteShell
   local noteScroll = CreateFrame("ScrollFrame", nil, noteShell, "UIPanelScrollFrameTemplate")
   book.noteScroll = noteScroll
-  noteScroll:SetPoint("TOPLEFT", 8, -8); noteScroll:SetSize(404, 104)
+  noteScroll:SetPoint("TOPLEFT", 8, -7); noteScroll:SetSize(404, 88)
   book.note = CreateFrame("EditBox", nil, noteScroll)
-  book.note:SetSize(400, 104); book.note:SetMultiLine(true); book.note:SetAutoFocus(false)
-  book.note:SetFontObject(GameFontHighlightSmall); book.note:SetTextColor(ink.body[1], ink.body[2], ink.body[3])
+  book.note:SetSize(400, 88); book.note:SetMultiLine(true); book.note:SetAutoFocus(false)
+  style.Font(book.note, "body"); book.note:SetTextColor(ink.body[1], ink.body[2], ink.body[3])
   book.note:SetMaxLetters(6000); noteScroll:SetScrollChild(book.note)
   local noteMeasure = book.selected:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  style.Font(noteMeasure, "body"); book.noteMeasure = noteMeasure
   noteMeasure:SetWidth(400); noteMeasure:SetAlpha(0)
   noteMeasure:SetPoint("TOPLEFT", book.note, "TOPLEFT")
   book.note:SetScript("OnTextChanged", function(self)
@@ -646,21 +706,23 @@ createBook = function()
       noteScroll:SetVerticalScroll(math.max(0,position+cursorHeight-noteScroll:GetHeight()))
     end
   end)
-  font(book.selected, 10, ink.muted, 34, 560, 40):SetText("Tags")
-  book.tags = input(book.selected, 67, 555, 200, 25, false, 240)
+  book.tagsLabel = font(book.selected, 10, ink.muted, 34, 558, 40); book.tagsLabel:SetText("Tags")
+  book.tags = input(book.selected, 77, 550, 190, 32, false, 240)
   book.tags:SetScript("OnTextChanged", changedDraft); book.tags.shell.saveOnBlur = true
   book.tags:SetScript("OnEnterPressed", function(self) self:ClearFocus(); saveDraft(true) end)
   tooltip(book.tags.shell, "Searchable tags", "Write your own labels, separated by commas: class quest, revisit at 25, hidden path...")
-  book.save = button(book.selected, "Save", 276, 555, 92, function() saveDraft(false) end)
+  book.save = button(book.selected, "Save", 276, 550, 92, function() saveDraft(false) end)
   book.feedback = font(header, 10, ink.pale, 620, 46, 364)
   book.feedback:SetJustifyH("RIGHT")
-  book.delete = button(book.selected, "Delete note", 376, 555, 92, function()
+  book.feedback:SetWordWrap(false)
+  book.delete = button(book.selected, "Delete", 376, 550, 92, function()
     if book.deleteArmed == state.selectedID then
       state.dirty=false; journal.DeleteNote(state.selectedID); state.selectedID=nil; book.deleteArmed=nil; render(true)
     else
       book.deleteArmed=state.selectedID; book.delete:SetText("Confirm?"); feedback("Click Confirm? to delete this field note.",false)
     end
   end)
+  tooltip(book.delete, "Delete this field note", "Click twice to confirm. Quest and exploration records are kept.")
   book.welcome = CreateFrame("Frame", nil, book.rightPage); book.welcome:SetAllPoints(book.rightPage)
   local crest = book.welcome:CreateTexture(nil, "ARTWORK")
   crest:SetPoint("TOPLEFT", 189, -158); crest:SetSize(112,112)
@@ -671,15 +733,19 @@ createBook = function()
     mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     crest:AddMaskTexture(mask)
   end
-  font(book.welcome, nil, ink.title, 70, 298, 350, "QuestFont_Large"):SetText("Every journey begins somewhere")
-  font(book.welcome, 14, ink.body, 70, 342, 349):SetText("Your journal grows as you explore, accept quests, and find your way through Azeroth.\n\nChoose a recorded moment on the left, or write a field note of your own.")
+  book.welcomeTitle = font(book.welcome, nil, ink.title, 70, 298, 350, "QuestFont_Large")
+  book.welcomeTitle:SetText("Every journey begins somewhere")
+  book.welcomeBody = font(book.welcome, 14, ink.body, 70, 342, 349)
+  book.welcomeBody:SetText("Your journal grows as you explore, accept quests, and find your way through Azeroth.\n\nChoose a recorded moment on the left, or write a field note of your own.")
+  book.welcomeBody:ClearAllPoints()
+  book.welcomeBody:SetPoint("TOPLEFT", 70, -298 - book.welcomeTitle:GetStringHeight() - 18)
   book.footer = font(book.body, 11, ink.pale, 58, 615, 798)
   button(book.body, "Where next?", 885, 607, 112, function()
     saveDraft(true); book:Hide(); if addon.ShowWhereNext then addon.ShowWhereNext() end
   end)
   book:SetScript("OnHide", function()
     saveDraft(true); dismissMenu(); play("IG_SPELLBOOK_CLOSE")
-    book.deleteArmed = nil; book.delete:SetText("Delete note")
+    book.deleteArmed = nil; book.delete:SetText("Delete")
     book.search:ClearFocus(); book.noteTitle:ClearFocus(); book.note:ClearFocus(); book.tags:ClearFocus()
     book.pages:SetAlpha(1); book:SetScript("OnUpdate", nil)
   end)
@@ -742,7 +808,7 @@ render = function(resetScroll)
       row.title:SetText(entry.title or "Untitled discovery"); row.title:SetAlpha(1)
       color(row.title,entry.status=="completed" and ink.success or ink.title)
       row.meta:SetText(stamp(entry.updatedAt).." · "..(entry.characterName or "").." · "..(typeNames[entry.kind] or ""))
-      row.mark:SetText(entry.revisit and "Back" or (entry.favorite and "Keep" or ""))
+      row.mark:SetText(entry.revisit and "R" or (entry.favorite and "F" or ""))
       color(row.bg,entry.id==state.selectedID and ink.selected or {0,0,0,0},true)
     end
   end
@@ -750,9 +816,9 @@ render = function(resetScroll)
   book.pageLabel:SetText(state.page.." / "..pages)
   local db=journal.Database()
   local zoneCount = #journal.Options("zoneKey")
-  book.summary:SetText(#db.entries.." recorded moments · "..zoneCount..(zoneCount==1 and " zone" or " zones"))
-  book.footer:SetText(#state.results..(#state.results==1 and " matching discovery" or " matching discoveries")
-    .." · "..chapterCount..(chapterCount==1 and " chapter" or " chapters").." · Your own encounters, remembered")
+  book.summary:SetText(#db.entries.." discoveries · "..zoneCount..(zoneCount==1 and " zone" or " zones"))
+  book.footer:SetText(#state.results..(#state.results==1 and " discovery" or " discoveries")
+    .." · "..chapterCount..(chapterCount==1 and " chapter" or " chapters").." · Your journey, remembered")
   renderDetails(selected,resetScroll)
 end
 
@@ -761,6 +827,16 @@ function addon.RefreshJournal()
   refreshPending=true
   local function update() refreshPending=false; if book:IsShown() then render() end end
   if C_Timer and C_Timer.After then C_Timer.After(0.05,update) else update() end
+end
+
+function addon.RefreshJournalReadingStyle()
+  if not book then return end
+  book.textSize:SetText("Text: " .. style.Name())
+  book.welcomeBody:ClearAllPoints()
+  book.welcomeBody:SetPoint("TOPLEFT", 70, -298 - book.welcomeTitle:GetStringHeight() - 18)
+  book.noteMeasure:SetText(book.note:GetText())
+  book.note:SetHeight(math.max(book.noteScroll:GetHeight(), book.noteMeasure:GetStringHeight() + 16))
+  if book:IsShown() then render() end
 end
 
 function addon.ToggleJournal()

@@ -1,5 +1,6 @@
 local root=assert(arg[1],"workspace path required")
 local mock=assert(loadfile(root.."/tests/wow_mock.lua"))()
+if arg[2]=="preview" and arg[5] then mock.fontMetrics=assert(loadfile(arg[5]))() end
 mock.quests={{questID=496,title="Elixir of Suffering",level=22,
   description="Apothecary Lydon of Tarren Mill wants 10 Gray Bear Tongues and some Creeper Ichor. The bears roam the hills. Keep a record of the paths you find.",
   objectiveText="Bring the ingredients to Apothecary Lydon in Tarren Mill."}}
@@ -100,7 +101,9 @@ local journalButton
 for _,v in ipairs(mock.objects) do if v.kind=="Button" and v.text=="Journal" then journalButton=v break end end
 mock.click(assert(journalButton)); assert(book:IsShown())
 if arg[2]=="preview" then
+  addon.ReadingStyle.SetPreset(arg[4] or "standard")
   book.search:SetText("elixir"); mock.flush()
+  if not book.noteShell:IsShown() then mock.click(book.notesToggle) end
   book.note:SetText("The northern ridge is quiet at dusk. Return when the next chapter sends me back through Hillsbrad.")
   mock.click(book.save)
   if arg[3]=="empty" then book.search:SetText("a place I have not discovered"); mock.flush()

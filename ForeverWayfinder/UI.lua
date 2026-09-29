@@ -1,6 +1,7 @@
 -- Hallmark · native journal panels · gold/brown frame, parchment, inset rows
 -- Pre-emit critique: P5 H4 E4 S5 R4 V4
 local _, addon = ...
+local style = addon.ReadingStyle
 local panel, scrollChild, titleText, footerText
 local PANEL_WIDTH, CONTENT_WIDTH = 438, 374
 local lines = {}
@@ -14,15 +15,15 @@ local trackerInstalled = false
 local chainButton, detailLabel
 local ink = {
   title = {0.22, 0.12, 0.06},
-  heading = {0.36, 0.19, 0.05},
-  body = {0.24, 0.17, 0.10},
-  muted = {0.34, 0.26, 0.17},
-  link = {0.15, 0.30, 0.35},
+  heading = {0.25, 0.13, 0.035},
+  body = {0.17, 0.105, 0.055},
+  muted = {0.28, 0.19, 0.10},
+  link = {0.07, 0.24, 0.29},
   success = {0.12, 0.31, 0.12},
   frame = {0.11, 0.08, 0.04},
   header = {0.18, 0.13, 0.07},
   gold = {1.00, 0.82, 0.35},
-  pale = {0.78, 0.70, 0.53},
+  pale = {0.91, 0.82, 0.65},
   edge = {0.51, 0.37, 0.18},
   rule = {0.43, 0.31, 0.17, 0.42},
   row = {0.20, 0.14, 0.08},
@@ -104,20 +105,22 @@ local function renderLines(entries, preserveScroll)
     local card = entry.kind == "step" or entry.kind == "zone"
       or entry.kind == "item" or entry.kind == "quest"
     local darkCard = card and entry.kind ~= "quest"
-    local padding = card and 8 or 0
+    local padding = card and 10 or 0
     local rowInset = entry.indent or 0
     local inset = rowInset + padding
-    local gap = entry.gap or 5
+    local gap = math.max(entry.gap or 7, 7)
     line:ClearAllPoints()
     line:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset, -height - padding)
     line:SetWidth(CONTENT_WIDTH - inset - (card and padding or 4))
-    line:SetFontObject(entry.font or QuestFontNormalSmall or GameFontHighlightSmall)
+    local role = entry.role or ((entry.font == QuestFont_Large or entry.font == GameFontNormalLarge) and "title")
+      or ((entry.kind == "step" or entry.kind == "quest") and "entry") or "body"
+    style.Font(line, role)
     line:SetText(entry.text)
     line:SetAlpha(1)
     local c = entry.color or ink.body
     line:SetTextColor(c[1], c[2], c[3])
     line:Show()
-    local lineHeight = math.max(line:GetStringHeight(), 17)
+    local lineHeight = math.max(line:GetStringHeight(), style.Size(role) + 3)
     local rowHeight = lineHeight + padding * 2
     local surface, surfaceColor
     if card then
@@ -211,7 +214,8 @@ end
 local function subheading(entries, text)
   local entry = insetLine(entries, text, ink.heading, 5)
   entry.font = GameFontNormalSmall or GameFontNormal
-  entry.before = 8
+  entry.role = "heading"
+  entry.before = 12
   entry.rule = true
   return entry
 end
@@ -271,14 +275,16 @@ local function createPanel()
   panel:Hide()
 
   titleText = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  titleText:SetPoint("TOPLEFT", 58, -18)
+  titleText:SetPoint("TOPLEFT", 58, -12)
   titleText:SetWidth(PANEL_WIDTH - 100)
   titleText:SetJustifyH("LEFT")
+  style.Font(titleText, "title")
   titleText:SetTextColor(ink.gold[1], ink.gold[2], ink.gold[3])
   panel.subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  panel.subtitle:SetPoint("TOPLEFT", 58, -42)
+  panel.subtitle:SetPoint("TOPLEFT", 58, -43)
   panel.subtitle:SetWidth(PANEL_WIDTH - 84)
   panel.subtitle:SetJustifyH("LEFT")
+  style.Font(panel.subtitle, "meta")
   panel.subtitle:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3])
 
   local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
@@ -292,30 +298,50 @@ local function createPanel()
   panel.scroll = scroll
 
   local showAll = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-  showAll:SetSize(82, 22)
+  showAll:SetSize(96, 28)
   showAll:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -74)
   showAll:SetText("Show all")
+  style.Button(showAll)
   showAll:Hide()
   panel.showAll = showAll
 
   local hideAll = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-  hideAll:SetSize(82, 22)
+  hideAll:SetSize(96, 28)
   hideAll:SetPoint("LEFT", showAll, "RIGHT", 8, 0)
   hideAll:SetText("Hide all")
+  style.Button(hideAll)
   hideAll:Hide()
   panel.hideAll = hideAll
 
+  local reading = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+  reading:SetPoint("TOPLEFT", 250, -74); reading:SetSize(172, 28)
+  reading:SetText("Text: " .. style.Name()); style.Button(reading)
+  reading:SetScript("OnClick", style.Cycle)
+  reading:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Reading text size")
+    GameTooltip:AddLine("Cycles Standard, Large, and Extra Large across Wayfinder. Your choice is saved.", .9, .8, .6, true)
+    GameTooltip:Show()
+  end)
+  reading:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  reading:SetScript("OnHide", function(self) if GameTooltip.IsOwned and GameTooltip:IsOwned(self) then GameTooltip:Hide() end end)
+  panel.readingButton = reading
+  panel.readingLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  panel.readingLabel:SetPoint("TOPLEFT", 18, -81); panel.readingLabel:SetWidth(214)
+  style.Font(panel.readingLabel, "meta")
+  panel.readingLabel:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3]); panel.readingLabel:SetText("Choose your reading size")
+
   footerText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   footerText:SetPoint("BOTTOMLEFT", 20, 10)
-  footerText:SetSize(PANEL_WIDTH - 40, 34)
+  footerText:SetSize(PANEL_WIDTH - 40, 42)
   footerText:SetJustifyH("LEFT")
   footerText:SetJustifyV("TOP")
+  style.Font(footerText, "meta")
   footerText:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3])
   if UISpecialFrames then table.insert(UISpecialFrames, "ForeverWayfinderPanel") end
 end
 
 local function setPanelTheme(mode)
-  local top = mode == "chain" and 108 or 72
+  local top = 114
   panel.paper:ClearAllPoints()
   panel.paper:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -top)
   panel.paper:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -12, 52)
@@ -324,6 +350,7 @@ local function setPanelTheme(mode)
   panel.scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -40, 64)
   panel.showAll:SetShown(mode == "chain")
   panel.hideAll:SetShown(mode == "chain")
+  panel.readingLabel:SetShown(mode ~= "chain")
   panel.mode = mode
 end
 
@@ -361,6 +388,7 @@ local function itemLine(entries, name, count, icon, itemID)
   entry.itemID = itemID
   entry.kind = "item"
   entry.font = GameFontHighlightSmall
+  entry.role = "body"
 end
 
 local function liveRewards(entries, questID)
@@ -504,9 +532,10 @@ showChain = function(questID, focusedStep, originID)
     heading.kind = "step"
     heading.highlight = expanded
     heading.anchorStep = step
-    insetLine(entries,
+    local statusLine = insetLine(entries,
       status .. "   ·   Lv " .. quest[3] .. "   ·   Starts at " .. quest[4],
       completed and ink.success or ink.muted, expanded and 12 or 13)
+    statusLine.role = "meta"
 
     if expanded then
       if details and details[1] and #details[1] > 0 then
@@ -660,7 +689,7 @@ local function showQuestStarter(mapID, quest)
   end
 end
 
-local function showWhere()
+local function showWhere(preserveScroll)
   createPanel()
   setPanelTheme("where")
   local entries = {}
@@ -706,7 +735,7 @@ local function showWhere()
   titleText:SetText("Where next?")
   footerText:SetText("Click a Classic quest for its starter waypoint. Forever quests stay a surprise.")
   positionPanel()
-  renderLines(entries)
+  renderLines(entries, preserveScroll)
   panel.mode = "where"
   panel.questID = nil
   panel:Show()
@@ -714,6 +743,14 @@ end
 
 addon.ShowClassicChain = showChain
 addon.ShowWhereNext = showWhere
+
+function addon.RefreshPanelReadingStyle()
+  if not panel then return end
+  panel.readingButton:SetText("Text: " .. style.Name())
+  if not panel:IsShown() then return end
+  if panel.mode == "chain" and panel.questID then showChain(panel.questID)
+  elseif panel.mode == "where" then showWhere(true) end
+end
 
 local function makeBadge(parent, symbol, red, green, blue, title, description)
   local badge = CreateFrame("Frame", nil, parent)
@@ -860,9 +897,10 @@ local function tryInstall()
   installed = true
   local details = QuestMapFrame.DetailsFrame
   chainButton = CreateFrame("Button", nil, details.BackFrame, "UIPanelButtonTemplate")
-  chainButton:SetSize(78, 22)
+  chainButton:SetSize(82, 26)
   chainButton:SetPoint("LEFT", details.BackFrame.BackButton, "RIGHT", 8, 0)
   chainButton:SetText("Chain")
+  style.Button(chainButton)
   chainButton:SetScript("OnClick", function()
     local questID = details.questID
     if panel and panel:IsShown() and panel.mode == "chain" and panel.questID == questID then
@@ -876,17 +914,19 @@ local function tryInstall()
   detailLabel = details.BackFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   detailLabel:SetPoint("LEFT", chainButton, "RIGHT", 4, 0)
   detailLabel:SetTextColor(0.55, 0.91, 1)
+  style.Font(detailLabel, "meta")
   detailLabel:Hide()
 
   local quests = QuestMapFrame.QuestsFrame
   local questScroll = quests.ScrollFrame
   questScroll:ClearAllPoints()
   questScroll:SetPoint("TOPLEFT", quests, "TOPLEFT", 0, -29)
-  questScroll:SetPoint("BOTTOMRIGHT", quests, "BOTTOMRIGHT", 0, 27)
+  questScroll:SetPoint("BOTTOMRIGHT", quests, "BOTTOMRIGHT", 0, 34)
   local whereButton = CreateFrame("Button", nil, quests, "UIPanelButtonTemplate")
-  whereButton:SetSize(104, 22)
+  whereButton:SetSize(116, 28)
   whereButton:SetPoint("BOTTOMLEFT", quests, "BOTTOMLEFT", 9, 2)
   whereButton:SetText("Where next?")
+  style.Button(whereButton)
   whereButton:SetScript("OnClick", function()
     if panel and panel:IsShown() and panel.mode == "where" then
       panel:Hide()
@@ -895,9 +935,10 @@ local function tryInstall()
     end
   end)
   local journalButton = CreateFrame("Button", nil, quests, "UIPanelButtonTemplate")
-  journalButton:SetSize(92, 22)
+  journalButton:SetSize(96, 28)
   journalButton:SetPoint("LEFT", whereButton, "RIGHT", 6, 0)
   journalButton:SetText("Journal")
+  style.Button(journalButton)
   journalButton:SetScript("OnClick", function() addon.ToggleJournal() end)
   local function updateWhereButton()
     whereButton:SetShown(questScroll:IsShown() and not details:IsShown())
@@ -940,8 +981,14 @@ SlashCmdList.FOREVERWAYFINDER = function(message)
     local db = addon.Journal.Database()
     print("Forever Wayfinder: " .. (db and #db.entries or 0) .. " journal entries; "
       .. (db and db.sessions or 0) .. " saved sessions.")
+  elseif command == "text" or command:match("^text ") then
+    local choice = command:match("^text%s+(.+)$")
+    if choice == "extra large" then choice = "extra" end
+    local ok = choice and style.SetPreset(choice) or (not choice and style.Cycle())
+    if ok then print("Forever Wayfinder: Text size · " .. style.Name())
+    else print("Forever Wayfinder: /fw text standard, large, or extra") end
   else
-    print("Forever Wayfinder: /fw where, /fw chain, or /fw journal")
+    print("Forever Wayfinder: /fw where, /fw chain, /fw journal, or /fw text")
   end
 end
 
