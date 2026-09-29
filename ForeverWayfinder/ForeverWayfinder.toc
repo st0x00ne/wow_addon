@@ -1,9 +1,10 @@
 ## Interface: 16001
 ## Title: Forever Wayfinder
-## Notes: Spoiler-safe quest markers, Classic chain reference, and gentle zone suggestions for WoW Forever.
+## Notes: A personal Discovery Journal, quest markers, Classic chains, and zone suggestions for WoW Forever.
 ## Author: Forever Wayfinder contributors
-## Version: 0.4.3
+## Version: 0.5.2
 ## IconTexture: Interface\AddOns\ForeverWayfinder\Media\Icon
+## SavedVariables: ForeverWayfinderJournal
 
 Data\ClassicQuests.lua
 Data\ClassicChainDetails.lua
@@ -11,4 +12,6 @@ Data\QuestOpportunities.lua
 Data\Zones.lua
 Data\VerifiedRewards.lua
 Core.lua
+Journal.lua
 UI.lua
+JournalUI.lua

@@ -1,11 +1,14 @@
--- Hallmark · pre-emit critique: P5 H4 E4 S5 R4 V3
+-- Hallmark · native journal panels · gold/brown frame, parchment, inset rows
+-- Pre-emit critique: P5 H4 E4 S5 R4 V4
 local _, addon = ...
 local panel, scrollChild, titleText, footerText
-local PANEL_WIDTH, CONTENT_WIDTH = 386, 328
+local PANEL_WIDTH, CONTENT_WIDTH = 438, 374
 local lines = {}
 local clickRows = {}
 local highlights = {}
 local rules = {}
+local surfaces = {}
+local edges = {}
 local installed = false
 local trackerInstalled = false
 local chainButton, detailLabel
@@ -16,7 +19,65 @@ local ink = {
   muted = {0.34, 0.26, 0.17},
   link = {0.15, 0.30, 0.35},
   success = {0.12, 0.31, 0.12},
+  frame = {0.11, 0.08, 0.04},
+  header = {0.18, 0.13, 0.07},
+  gold = {1.00, 0.82, 0.35},
+  pale = {0.78, 0.70, 0.53},
+  edge = {0.51, 0.37, 0.18},
+  rule = {0.43, 0.31, 0.17, 0.42},
+  row = {0.20, 0.14, 0.08},
+  rowSelected = {0.31, 0.22, 0.11},
+  rowHover = {0.37, 0.27, 0.14},
+  questRow = {0.46, 0.33, 0.16, 0.10},
+  questHover = {0.46, 0.33, 0.16, 0.22},
+  highlight = {0.52, 0.39, 0.16, 0.18},
+  hover = {0.58, 0.22, 0.07},
+  item = {0.70, 0.85, 0.96},
+  completedTitle = {0.56, 0.85, 0.40},
+  paper = {1.00, 0.95, 0.84},
+  paperBase = {0.78, 0.67, 0.46},
 }
+
+local function colorTexture(texture, color)
+  texture:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+end
+
+local function drawRow(index, inset, height, rowHeight, color, selected)
+  local surface = surfaces[index]
+  if not surface then
+    surface = scrollChild:CreateTexture(nil, "BACKGROUND")
+    surfaces[index] = surface
+  end
+  surface:ClearAllPoints()
+  surface:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset, -height)
+  local width = CONTENT_WIDTH - inset
+  surface:SetSize(width, rowHeight)
+  colorTexture(surface, color)
+  surface:Show()
+
+  if not edges[index] then
+    edges[index] = {}
+    for side = 1, 4 do
+      edges[index][side] = scrollChild:CreateTexture(nil, "BORDER")
+    end
+  end
+  local borderColor = selected and ink.gold or ink.edge
+  local border = edges[index]
+  for _, edge in ipairs(border) do
+    edge:ClearAllPoints()
+    colorTexture(edge, borderColor)
+    edge:Show()
+  end
+  border[1]:SetPoint("TOPLEFT", surface, "TOPLEFT")
+  border[1]:SetSize(width, 1)
+  border[2]:SetPoint("BOTTOMLEFT", surface, "BOTTOMLEFT")
+  border[2]:SetSize(width, 1)
+  border[3]:SetPoint("TOPLEFT", surface, "TOPLEFT")
+  border[3]:SetSize(1, rowHeight)
+  border[4]:SetPoint("TOPRIGHT", surface, "TOPRIGHT")
+  border[4]:SetSize(1, rowHeight)
+  return surface
+end
 
 local function renderLines(entries, preserveScroll)
   local priorScroll = preserveScroll and panel.scroll:GetVerticalScroll() or 0
@@ -25,6 +86,10 @@ local function renderLines(entries, preserveScroll)
   for _, button in pairs(clickRows) do button:Hide() end
   for _, highlight in pairs(highlights) do highlight:Hide() end
   for _, rule in pairs(rules) do rule:Hide() end
+  for _, surface in pairs(surfaces) do surface:Hide() end
+  for _, border in pairs(edges) do
+    for _, edge in ipairs(border) do edge:Hide() end
+  end
   local height = 0
   local anchorOffsets = {}
   for index, entry in ipairs(entries) do
@@ -36,39 +101,51 @@ local function renderLines(entries, preserveScroll)
       line:SetJustifyH("LEFT")
       lines[index] = line
     end
-    local inset = entry.indent or 0
+    local card = entry.kind == "step" or entry.kind == "zone"
+      or entry.kind == "item" or entry.kind == "quest"
+    local darkCard = card and entry.kind ~= "quest"
+    local padding = card and 8 or 0
+    local rowInset = entry.indent or 0
+    local inset = rowInset + padding
     local gap = entry.gap or 5
     line:ClearAllPoints()
-    line:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset, -height)
-    line:SetWidth(CONTENT_WIDTH - inset - 4)
+    line:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset, -height - padding)
+    line:SetWidth(CONTENT_WIDTH - inset - (card and padding or 4))
     line:SetFontObject(entry.font or QuestFontNormalSmall or GameFontHighlightSmall)
     line:SetText(entry.text)
+    line:SetAlpha(1)
     local c = entry.color or ink.body
     line:SetTextColor(c[1], c[2], c[3])
     line:Show()
     local lineHeight = math.max(line:GetStringHeight(), 17)
+    local rowHeight = lineHeight + padding * 2
+    local surface, surfaceColor
+    if card then
+      surfaceColor = darkCard and (entry.highlight and ink.rowSelected or ink.row) or ink.questRow
+      surface = drawRow(index, rowInset, height, rowHeight, surfaceColor, entry.highlight)
+    end
     if entry.rule then
       local rule = rules[index]
       if not rule then
         rule = scrollChild:CreateTexture(nil, "ARTWORK")
-        rule:SetColorTexture(0.43, 0.31, 0.17, 0.42)
+        colorTexture(rule, ink.rule)
         rules[index] = rule
       end
       rule:ClearAllPoints()
-      rule:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -height - lineHeight - gap - 2)
-      rule:SetSize(CONTENT_WIDTH - 4, 1)
+      rule:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", rowInset, -height - rowHeight - gap - 2)
+      rule:SetSize(CONTENT_WIDTH - rowInset - 4, 1)
       rule:Show()
     end
-    if entry.highlight then
+    if entry.highlight and not card then
       local highlight = highlights[index]
       if not highlight then
         highlight = scrollChild:CreateTexture(nil, "BACKGROUND")
-        highlight:SetColorTexture(0.52, 0.39, 0.16, 0.18)
+        colorTexture(highlight, ink.highlight)
         highlights[index] = highlight
       end
       highlight:ClearAllPoints()
       highlight:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset - 4, -height + 2)
-      highlight:SetSize(CONTENT_WIDTH - inset + 1, lineHeight + 3)
+      highlight:SetSize(CONTENT_WIDTH - inset + 1, rowHeight + 3)
       highlight:Show()
     end
     if entry.onClick or entry.itemID then
@@ -82,11 +159,13 @@ local function renderLines(entries, preserveScroll)
         clickRows[index] = button
       end
       button:ClearAllPoints()
-      button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", inset - 3, -height)
-      button:SetSize(CONTENT_WIDTH - inset + 2, lineHeight + 3)
+      button:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", card and rowInset or inset - 3, -height)
+      button:SetSize(CONTENT_WIDTH - rowInset, rowHeight + (card and 0 or 3))
       button:SetScript("OnClick", entry.onClick)
       button:SetScript("OnEnter", function(self)
-        hoverLine:SetTextColor(0.58, 0.22, 0.07)
+        local hoverColor = darkCard and ink.gold or ink.hover
+        hoverLine:SetTextColor(hoverColor[1], hoverColor[2], hoverColor[3])
+        if surface then colorTexture(surface, darkCard and ink.rowHover or ink.questHover) end
         if itemID and GameTooltip.SetItemByID then
           GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
           GameTooltip:SetItemByID(itemID)
@@ -99,11 +178,17 @@ local function renderLines(entries, preserveScroll)
       end)
       button:SetScript("OnLeave", function()
         hoverLine:SetTextColor(baseColor[1], baseColor[2], baseColor[3])
+        if surface then colorTexture(surface, surfaceColor) end
         GameTooltip:Hide()
+      end)
+      button:SetScript("OnMouseDown", function() hoverLine:SetAlpha(0.75) end)
+      button:SetScript("OnMouseUp", function() hoverLine:SetAlpha(1) end)
+      button:SetScript("OnHide", function(self)
+        if GameTooltip.IsOwned and GameTooltip:IsOwned(self) then GameTooltip:Hide() end
       end)
       button:Show()
     end
-    height = height + lineHeight + gap + (entry.rule and 8 or 0)
+    height = height + rowHeight + gap + (entry.rule and 8 or 0)
   end
   scrollChild:SetHeight(math.max(height + 4, 1))
   local wanted = anchorOffsets[panel.scrollToStep] or priorScroll
@@ -127,103 +212,123 @@ local function subheading(entries, text)
   local entry = insetLine(entries, text, ink.heading, 5)
   entry.font = GameFontNormalSmall or GameFontNormal
   entry.before = 8
+  entry.rule = true
   return entry
 end
 
 local function createPanel()
   if panel then return end
-  panel = CreateFrame("Frame", "ForeverWayfinderPanel", UIParent)
-  panel:SetSize(PANEL_WIDTH, 550)
+  panel = CreateFrame("Frame", "ForeverWayfinderPanel", UIParent, "BackdropTemplate")
+  panel:SetSize(PANEL_WIDTH, 580)
   panel:SetFrameStrata("DIALOG")
+  panel:SetClampedToScreen(true)
+  panel:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8X8",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = false, edgeSize = 16,
+    insets = {left = 4, right = 4, top = 4, bottom = 4},
+  })
+  panel:SetBackdropColor(ink.frame[1], ink.frame[2], ink.frame[3], 1)
+  panel:SetBackdropBorderColor(ink.edge[1], ink.edge[2], ink.edge[3], 1)
 
-  local paper = panel:CreateTexture(nil, "BACKGROUND")
-  paper:SetAllPoints(panel)
-  paper:SetAtlas("QuestDetailsBackgrounds")
-  paper:Hide()
+  local header = panel:CreateTexture(nil, "BACKGROUND")
+  header:SetPoint("TOPLEFT", 6, -6)
+  header:SetPoint("TOPRIGHT", -6, -6)
+  header:SetHeight(58)
+  colorTexture(header, ink.header)
+  local headerRule = panel:CreateTexture(nil, "BORDER")
+  headerRule:SetPoint("TOPLEFT", 8, -64)
+  headerRule:SetPoint("TOPRIGHT", -8, -64)
+  headerRule:SetHeight(1)
+  colorTexture(headerRule, ink.edge)
+
+  local icon = panel:CreateTexture(nil, "ARTWORK")
+  icon:SetSize(32, 32)
+  icon:SetPoint("TOPLEFT", 16, -18)
+  icon:SetTexture("Interface\\AddOns\\ForeverWayfinder\\Media\\Icon")
+
+  local paper = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+  paper:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8X8",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = false, edgeSize = 16,
+    insets = {left = 4, right = 4, top = 4, bottom = 4},
+  })
+  paper:SetBackdropColor(ink.paperBase[1], ink.paperBase[2], ink.paperBase[3], 1)
+  paper:SetBackdropBorderColor(ink.edge[1], ink.edge[2], ink.edge[3], 1)
+  -- QuestBG includes unused texture space in this client. Its cropped atlas
+  -- fills the reading area; the opaque base also keeps text readable if the
+  -- atlas is unavailable. Keep the artwork separate from Backdrop sizing.
+  local parchment = paper:CreateTexture(nil, "BACKGROUND", nil, 1)
+  parchment:SetPoint("TOPLEFT", paper, "TOPLEFT", 4, -4)
+  parchment:SetPoint("BOTTOMRIGHT", paper, "BOTTOMRIGHT", -4, 4)
+  if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo("QuestDetailsBackgrounds") then
+    parchment:SetAtlas("QuestDetailsBackgrounds")
+  end
+  parchment:SetVertexColor(ink.paper[1], ink.paper[2], ink.paper[3], 1)
+  panel.parchment = parchment
   panel.paper = paper
-
-  local header = panel:CreateTexture(nil, "BORDER")
-  header:SetPoint("TOPLEFT", panel, "TOPLEFT", 3, -3)
-  header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -3, -3)
-  header:SetHeight(52)
-  header:SetAtlas("questlog-reward-top-frame")
-  header:Hide()
-  panel.paperHeader = header
-
-  local border = panel:CreateTexture(nil, "BORDER")
-  border:SetAllPoints(panel)
-  border:SetAtlas("questlog-frame")
-  border:Hide()
-  panel.paperBorder = border
-
-  local filigree = panel:CreateTexture(nil, "ARTWORK")
-  filigree:SetPoint("TOP", panel, "TOP", 0, 2)
-  filigree:SetAtlas("questlog-frame-filigree", true)
-  filigree:Hide()
-  panel.paperFiligree = filigree
   panel:Hide()
 
   titleText = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  titleText:SetPoint("TOPLEFT", 16, -17)
-  titleText:SetWidth(CONTENT_WIDTH - 8)
+  titleText:SetPoint("TOPLEFT", 58, -18)
+  titleText:SetWidth(PANEL_WIDTH - 100)
   titleText:SetJustifyH("LEFT")
+  titleText:SetTextColor(ink.gold[1], ink.gold[2], ink.gold[3])
+  panel.subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  panel.subtitle:SetPoint("TOPLEFT", 58, -42)
+  panel.subtitle:SetWidth(PANEL_WIDTH - 84)
+  panel.subtitle:SetJustifyH("LEFT")
+  panel.subtitle:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3])
 
   local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -4, -4)
   close:SetScript("OnClick", function() panel:Hide() end)
 
-  local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", 17, -49)
-  scroll:SetPoint("BOTTOMRIGHT", -32, 45)
+  local scroll = CreateFrame("ScrollFrame", nil, paper, "UIPanelScrollFrameTemplate")
   scrollChild = CreateFrame("Frame", nil, scroll)
   scrollChild:SetSize(CONTENT_WIDTH, 1)
   scroll:SetScrollChild(scrollChild)
   panel.scroll = scroll
 
   local showAll = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-  showAll:SetSize(82, 21)
-  showAll:SetPoint("TOPLEFT", panel, "TOPLEFT", 17, -58)
+  showAll:SetSize(82, 22)
+  showAll:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -74)
   showAll:SetText("Show all")
   showAll:Hide()
   panel.showAll = showAll
 
   local hideAll = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-  hideAll:SetSize(82, 21)
-  hideAll:SetPoint("LEFT", showAll, "RIGHT", 5, 0)
+  hideAll:SetSize(82, 22)
+  hideAll:SetPoint("LEFT", showAll, "RIGHT", 8, 0)
   hideAll:SetText("Hide all")
   hideAll:Hide()
   panel.hideAll = hideAll
 
-  footerText = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-  footerText:SetPoint("BOTTOMLEFT", 17, 15)
-  footerText:SetWidth(CONTENT_WIDTH)
+  footerText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  footerText:SetPoint("BOTTOMLEFT", 20, 10)
+  footerText:SetSize(PANEL_WIDTH - 40, 34)
   footerText:SetJustifyH("LEFT")
+  footerText:SetJustifyV("TOP")
+  footerText:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3])
+  if UISpecialFrames then table.insert(UISpecialFrames, "ForeverWayfinderPanel") end
 end
 
 local function setPanelTheme(mode)
-  local details = QuestMapFrame and QuestMapFrame.DetailsFrame
-  if details and details.Bg and details.Bg.GetAtlas then
-    local atlas = details.Bg:GetAtlas()
-    if atlas then panel.paper:SetAtlas(atlas) end
-  end
-  local border = details and details.BorderFrame and details.BorderFrame.Border
-  if border and border.GetAtlas then
-    local atlas = border:GetAtlas()
-    if atlas then panel.paperBorder:SetAtlas(atlas) end
-  end
-  panel.paper:Show()
-  panel.paperHeader:Show()
-  panel.paperBorder:Show()
-  panel.paperFiligree:Show()
+  local top = mode == "chain" and 108 or 72
+  panel.paper:ClearAllPoints()
+  panel.paper:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -top)
+  panel.paper:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -12, 52)
+  panel.scroll:ClearAllPoints()
+  panel.scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 24, -top - 12)
+  panel.scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -40, 64)
   panel.showAll:SetShown(mode == "chain")
   panel.hideAll:SetShown(mode == "chain")
-  titleText:SetTextColor(1, 0.84, 0.42)
-  footerText:SetTextColor(0.34, 0.26, 0.18)
   panel.mode = mode
 end
 
 local function positionPanel()
-  panel:SetHeight(math.min(550, math.max(300, UIParent:GetHeight() - 50)))
+  panel:SetHeight(math.min(580, math.max(300, UIParent:GetHeight() - 50)))
   panel:ClearAllPoints()
   if QuestMapFrame and QuestMapFrame:IsShown() then
     local right = QuestMapFrame:GetRight() or 0
@@ -249,11 +354,13 @@ local function safeCall(func, ...)
 end
 
 local function itemLine(entries, name, count, icon, itemID)
-  local image = icon and ("|T" .. icon .. ":16:16:0:0|t ") or ""
+  local image = icon and ("|T" .. icon .. ":24:24:0:0|t ") or ""
   local amount = count and count > 1 and (" x" .. count) or ""
   local entry = insetLine(entries, image .. (name or ("Item #" .. (itemID or "?"))) .. amount,
-    ink.link, 4)
+    ink.item, 6)
   entry.itemID = itemID
+  entry.kind = "item"
+  entry.font = GameFontHighlightSmall
 end
 
 local function liveRewards(entries, questID)
@@ -358,9 +465,8 @@ showChain = function(questID, focusedStep, originID)
     end
   end
 
-  append(entries, chain[1][2], ink.title, 4).font = QuestFont_Large or GameFontNormalLarge
-  append(entries, completeCount .. " of " .. #chain .. " completed · Classic reference",
-    ink.muted, 20)
+  append(entries, chain[1][2], ink.title, 14).font = QuestFont_Large or GameFontNormalLarge
+  panel.subtitle:SetText(completeCount .. " of " .. #chain .. " completed · Classic reference")
   if backQuestID then
     append(entries, "‹ Previous chain segment", ink.link, 12,
       function() showChain(backQuestID) end, "Return to the previous Classic segment.")
@@ -373,10 +479,12 @@ showChain = function(questID, focusedStep, originID)
     panel.expandedSteps = {}
     showChain(questID)
   end)
-
-  panel.scroll:ClearAllPoints()
-  panel.scroll:SetPoint("TOPLEFT", 17, -91)
-  panel.scroll:SetPoint("BOTTOMRIGHT", -32, 45)
+  local expandedCount = 0
+  for step = 1, #chain do
+    if panel.expandedSteps[step] then expandedCount = expandedCount + 1 end
+  end
+  panel.showAll:SetEnabled(expandedCount < #chain)
+  panel.hideAll:SetEnabled(expandedCount > 0)
 
   for step, quest in ipairs(chain) do
     local stepNumber, stepID = step, quest[1]
@@ -387,12 +495,13 @@ showChain = function(questID, focusedStep, originID)
     local status = completed and "Completed" or (inLog and "In your log" or "Not in log")
     local heading = append(entries,
       (expanded and "-  " or "+  ") .. step .. ". " .. quest[2],
-      completed and ink.success or ink.title, 2,
+      completed and ink.completedTitle or ink.gold, 6,
       function()
         panel.expandedSteps[stepNumber] = not panel.expandedSteps[stepNumber]
         showChain(questID)
       end, "Click to " .. (expanded and "hide" or "show") .. " this Classic step's details.")
-    heading.font = QuestFontNormalSmall or GameFontHighlight
+    heading.font = GameFontNormal or GameFontHighlight
+    heading.kind = "step"
     heading.highlight = expanded
     heading.anchorStep = step
     insetLine(entries,
@@ -554,15 +663,12 @@ end
 local function showWhere()
   createPanel()
   setPanelTheme("where")
-  panel.scroll:ClearAllPoints()
-  panel.scroll:SetPoint("TOPLEFT", 17, -49)
-  panel.scroll:SetPoint("BOTTOMRIGHT", -32, 45)
   local entries = {}
   local zones, currentMap, currentZone = addon.GetZoneSuggestions()
   local level = UnitLevel("player") or 1
-  append(entries, "Level " .. level .. " · Classic quests you could try", {0.30, 0.20, 0.11}, 14).font = QuestFontNormalSmall or GameFontHighlightSmall
+  panel.subtitle:SetText("Level " .. level .. " · Possible Classic quest starts")
   if #zones == 0 then
-    append(entries, "No nearby level bands in this small guide yet.", {0.38, 0.29, 0.21})
+    append(entries, "No nearby level bands in this small guide yet.", ink.muted)
   end
   for index, option in ipairs(zones) do
     local zone = option.zone
@@ -575,26 +681,27 @@ local function showWhere()
     local countText = questCount == 1 and "1 possible Classic start"
       or questCount .. " possible Classic starts"
     local heading = append(entries, index .. ". " .. name .. "  (" .. zone[3] .. "–" .. zone[4] .. ")",
-      {0.36, 0.20, 0.08}, 14,
+      ink.gold, 8,
       function() openZoneMap(mapID) end, "Click to view this zone on the map.")
-    heading.font = QuestFont_Large or GameFontNormal
-    heading.rule = true
-    append(entries, "    " .. travel .. " · " .. countText, {0.44, 0.33, 0.22}, 7)
+    heading.font = GameFontNormalLarge or GameFontNormal
+    heading.kind = "zone"
+    insetLine(entries, travel .. " · " .. countText, ink.muted, 8)
     for _, quest in ipairs(option.quests) do
       local selectedQuest = quest
-      local questEntry = append(entries, "    › [" .. quest[4] .. "] " .. quest[2], {0.12, 0.34, 0.49}, 2,
+      local questEntry = append(entries,
+        "|TInterface\\GossipFrame\\AvailableQuestIcon:18:18:0:0|t [" .. quest[4] .. "] " .. quest[2], ink.link, 4,
         function() showQuestStarter(mapID, selectedQuest) end,
         "Click for a map waypoint to the Classic quest starter. Replaces your current waypoint.")
       questEntry.font = QuestFontNormalSmall or GameFontHighlightSmall
-      append(entries, "       " .. quest[11] .. " · " .. quest[7] .. ", " .. quest[8],
-        {0.45, 0.35, 0.26}, 5)
+      questEntry.kind = "quest"
+      insetLine(entries, quest[11] .. " · " .. quest[7] .. ", " .. quest[8], ink.muted, 10)
     end
     if #option.quests == 0 then
-      local message = zone[8] and "    Explore for Forever quests; names stay hidden."
-        or "    No unstarted Classic quest matched your character."
-      append(entries, message, {0.45, 0.35, 0.26}, 5)
+      local message = zone[8] and "Explore for Forever quests; names stay hidden."
+        or "No unstarted Classic quest matched your character."
+      insetLine(entries, message, ink.muted, 5)
     end
-    append(entries, " ", nil, 8)
+    entries[#entries].gap = 20
   end
   titleText:SetText("Where next?")
   footerText:SetText("Click a Classic quest for its starter waypoint. Forever quests stay a surprise.")
@@ -604,6 +711,9 @@ local function showWhere()
   panel.questID = nil
   panel:Show()
 end
+
+addon.ShowClassicChain = showChain
+addon.ShowWhereNext = showWhere
 
 local function makeBadge(parent, symbol, red, green, blue, title, description)
   local badge = CreateFrame("Frame", nil, parent)
@@ -784,8 +894,14 @@ local function tryInstall()
       showWhere()
     end
   end)
+  local journalButton = CreateFrame("Button", nil, quests, "UIPanelButtonTemplate")
+  journalButton:SetSize(92, 22)
+  journalButton:SetPoint("LEFT", whereButton, "RIGHT", 6, 0)
+  journalButton:SetText("Journal")
+  journalButton:SetScript("OnClick", function() addon.ToggleJournal() end)
   local function updateWhereButton()
     whereButton:SetShown(questScroll:IsShown() and not details:IsShown())
+    journalButton:SetShown(questScroll:IsShown() and not details:IsShown())
   end
   questScroll:HookScript("OnShow", updateWhereButton)
   questScroll:HookScript("OnHide", updateWhereButton)
@@ -818,8 +934,14 @@ SlashCmdList.FOREVERWAYFINDER = function(message)
     else
       print("Forever Wayfinder: Select a Classic chain quest in the quest log first.")
     end
+  elseif command == "journal" or command == "journey" then
+    addon.ToggleJournal()
+  elseif command == "journal status" then
+    local db = addon.Journal.Database()
+    print("Forever Wayfinder: " .. (db and #db.entries or 0) .. " journal entries; "
+      .. (db and db.sessions or 0) .. " saved sessions.")
   else
-    print("Forever Wayfinder: /fw where or /fw chain")
+    print("Forever Wayfinder: /fw where, /fw chain, or /fw journal")
   end
 end
 

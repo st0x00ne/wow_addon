@@ -43,8 +43,10 @@ def release_files() -> tuple[str, list[tuple[Path, str]]]:
             members.append((source, "ForeverWayfinder/" + source.relative_to(ADDON).as_posix()))
     for name in ("README.md", "LICENSE", "ATTRIBUTION.md"):
         members.append((ROOT / name, "ForeverWayfinder/" + name))
-    for source in sorted((ROOT / "tools").glob("build_*.py")):
+    for source in sorted((ROOT / "tools").glob("*.py")):
         members.append((source, "ForeverWayfinder/Source/tools/" + source.name))
+    for source in sorted((ROOT / "tests").glob("*.lua")):
+        members.append((source, "ForeverWayfinder/Source/tests/" + source.name))
     for source in sorted((ROOT / "art").iterdir()):
         if source.is_file():
             members.append((source, "ForeverWayfinder/Source/art/" + source.name))
