@@ -37,7 +37,7 @@ def font_metrics(path):
 def render(nodes, output):
     bounds = nodes[0]["clip"]
     canvas = Image.new("RGBA", (round(bounds["w"]), round(bounds["h"])), (22, 15, 8, 255))
-    for node in sorted(nodes, key=lambda n: (n["level"], n["layer"], n["order"])):
+    for node in sorted(nodes, key=lambda n: (n.get("strata", 0), n["level"], n["layer"], n["order"])):
         r = node["rect"]
         x, y, w, h = r["x"], r["y"], r["w"], r["h"]
         if w <= 0 or h <= 0:
@@ -59,6 +59,11 @@ def render(nodes, output):
                     ImageDraw.Draw(mask).ellipse((0,0,icon.width-1,icon.height-1),fill=255)
                     icon.putalpha(mask)
                 layer.paste(icon, (round(x), round(y)), icon)
+            elif texture.endswith("UI-Minimap-Background"):
+                draw.ellipse((x,y,x+w,y+h),fill=(16,12,8,255))
+            elif texture.endswith("MiniMap-TrackingBorder"):
+                # Approximate the visible circular rim inside the native 53px texture.
+                draw.ellipse((x+2,y+2,x+30,y+30),outline=(185,147,72,255),width=2)
             elif texture:
                 draw.rectangle((x, y, x + w, y + h), fill=(76, 57, 29, 255), outline=(163, 131, 69, 255), width=2)
                 draw.line((x+6,y+6,x+w-6,y+h-6),fill=(207,178,110,255),width=2)

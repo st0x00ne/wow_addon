@@ -181,6 +181,42 @@ function mock.click(control)
   if control.scripts.OnClick then control.scripts.OnClick(control) end
   mock.flush()
 end
+-- Exercise focus saves and a deferred refresh between press and release.
+function mock.pointerClick(control)
+  assert(mock.visible(control) and control.enabled~=false)
+  if control.scripts.OnMouseDown then control.scripts.OnMouseDown(control) end
+  if mock.focus then mock.focus:ClearFocus() end
+  mock.flush()
+  if control.scripts.OnMouseUp then control.scripts.OnMouseUp(control) end
+  mock.click(control)
+end
+StaticPopupDialogs={}
+mock.popups={}
+function StaticPopup_Show(which,arg1,arg2,data)
+  if mock.popupUnavailable then return nil end
+  local popup=mock.popups[which] or mock.object("Frame",nil,UIParent)
+  mock.popups[which]=popup
+  popup.which,popup.data=which,data
+  popup.text=string.format(assert(StaticPopupDialogs[which]).text,arg1 or "",arg2 or "")
+  popup:Show(); mock.popup=popup
+  return popup
+end
+function StaticPopup_Hide(which)
+  local popup=mock.popups[which]
+  if popup then popup:Hide(); if mock.popup==popup then mock.popup=nil end end
+end
+function mock.acceptPopup()
+  local popup=assert(mock.popup)
+  assert(popup:IsShown())
+  StaticPopupDialogs[popup.which].OnAccept(popup,popup.data)
+  popup:Hide(); mock.popup=nil; mock.flush()
+end
+function mock.cancelPopup()
+  local popup=assert(mock.popup)
+  local callback=StaticPopupDialogs[popup.which].OnCancel
+  if callback then callback(popup,popup.data) end
+  popup:Hide(); mock.popup=nil; mock.flush()
+end
 for _,name in ipairs({"GameFontHighlightSmall","GameFontNormalLarge","GameFontNormalSmall","GameFontNormal",
   "GameFontHighlight","QuestFontNormalSmall","QuestFont_Large"}) do _G[name]=name end
 STANDARD_TEXT_FONT="Friz"

@@ -15,8 +15,9 @@ World of Warcraft and its art are trademarks and property of Blizzard
 Entertainment. Forever Wayfinder is a community addon.
 
 The compass icon and Discovery Journal book background are original generated
-artwork for Forever Wayfinder. Full-size PNG sources are in `Source/art` in the
-release archive; `JournalBook-prompt.md` records the book's built-in imagegen prompt.
+artwork for Forever Wayfinder. Full-size PNG sources are retained in the repository's
+`art` folder and included in the separate full source archive's `art` folder.
+The install zip includes the game textures; `JournalBook-prompt.md` records the book's built-in imagegen prompt.
 The visual study used Classic WoW's spellbook and quest-log layouts; no third-party
 addon code or screenshot artwork is embedded in the journal.
 

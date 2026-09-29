@@ -82,9 +82,12 @@ The chain panel's Classic locations likewise mark a possible starter or turn-in,
 ## Sharing a beta build
 
 Run `python tools/package_release.py` to create a versioned zip in `dist/`.
-The zip contains one installable `ForeverWayfinder` folder, including the
-GPL-3.0 license, [attribution](ATTRIBUTION.md), original book artwork and prompt,
-build tools, and journal test sources. [RELEASE.md](RELEASE.md) has a Discord message and the in-game
+The upload zip contains one installable `ForeverWayfinder` folder, including the
+game textures, GPL-3.0 license, [attribution](ATTRIBUTION.md), artwork prompt,
+build tools, and journal test sources. Original PNG artwork is excluded from the
+upload to avoid shipping both source images and game textures. Run
+`python tools/package_release.py --source` to build a separate full source zip
+with the original PNGs. [RELEASE.md](RELEASE.md) has a Discord message and the in-game
 checks to complete before calling the addon stable.
 
 ## Development checks

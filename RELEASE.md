@@ -6,7 +6,12 @@ another player's computer. It is standalone and does not require Questie.
 
 ## Discord message
 
-> **Forever Wayfinder 0.5.3 beta** — a quest companion and personal Discovery Journal for WoW Forever.
+Version 0.5.4 fixes clicks on the field-note footer below long notes and opens
+a visible confirmation dialog when deleting a field note. The upload zip omits
+original PNG artwork; the game textures are unchanged. Original images remain
+in the repository and the separate source archive.
+
+> **Forever Wayfinder 0.5.4 beta** — a quest companion and personal Discovery Journal for WoW Forever.
 > It marks possible new Forever quests without revealing their future steps,
 > labels dungeon quests, shows expandable details for known Classic chains,
 > and suggests a few places to explore next. Classic locations and future
@@ -21,6 +26,8 @@ another player's computer. It is standalone and does not require Questie.
 > This update improves readability across the journal, Chain, and Where next?:
 > larger text, stronger ink, more spacing, and a saved Text size button.
 > Fold personal notes to give a quest's story more room on the right page.
+> Field-note Delete now opens a visible confirmation, and footer controls stay
+> above long notes. The download is smaller with the same in-game artwork.
 >
 > Download the attached zip and extract it into
 > `World of Warcraft/_classic_beta_/Interface/AddOns/`. You should end up with
@@ -58,6 +65,8 @@ another player's computer. It is standalone and does not require Questie.
 - Confirm journal notes and favorites survive `/reload`, logout, and a full
   client restart. Use `/fw journal status` to compare entry and session counts.
 
-The release zip includes the addon icon, original book artwork and generation prompt,
-readable Lua data, build tools, journal test sources, attribution, and GPL-3.0 license. A release can be rebuilt with
-`python tools/package_release.py` from the repository root.
+The upload zip includes the addon icon and book game textures, generation prompt,
+readable Lua data, build tools, journal test sources, attribution, and GPL-3.0 license.
+Original PNG artwork is kept in a separate full source archive. Build the upload
+with `python tools/package_release.py`; add `--source` for the archive containing
+the original PNGs. Use the smaller `-beta.zip` for CurseForge and Discord.

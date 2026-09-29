@@ -38,6 +38,14 @@ for order,v in ipairs(mock.objects) do
   if p==book and mock.visible(v) and v.alpha~=0 then
     local layer=({BACKGROUND=0,BORDER=1,ARTWORK=2,OVERLAY=3})[v.layer or "BACKGROUND"] or 0
     local level=(v.kind=="Texture" or v.kind=="FontString") and v.parent:GetFrameLevel() or v:GetFrameLevel()
+    local stratum,parent=0,v
+    while parent do
+      if parent.strata then
+        stratum=({BACKGROUND=0,LOW=1,MEDIUM=2,HIGH=3,DIALOG=4,FULLSCREEN=5,FULLSCREEN_DIALOG=6,TOOLTIP=7})[parent.strata] or 0
+        break
+      end
+      parent=parent.parent
+    end
     local clip=rect(book)
     local ancestor=v.parent
     while ancestor and ancestor~=book do
@@ -48,7 +56,7 @@ for order,v in ipairs(mock.objects) do
       end
       ancestor=ancestor.parent
     end
-    result[#result+1]={rect=rect(v),clip=clip,kind=v.kind,template=v.template,layer=layer,level=level,order=order,
+    result[#result+1]={rect=rect(v),clip=clip,kind=v.kind,template=v.template,layer=layer,level=level,strata=stratum,order=order,
       text=v.text,color=v.color,texture=v.texture,backdrop=v.backdropColor,border=v.borderColor,
       fontSize=v.fontSize or (v.normalFont and v.normalFont.fontSize),font=v.font,spacing=v.spacing,
       wrap=v.wrap,justify=v.justifyH,checked=v.checked,enabled=v.enabled,alpha=v.alpha,masked=v.mask~=nil}

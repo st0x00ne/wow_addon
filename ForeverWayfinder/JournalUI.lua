@@ -19,6 +19,7 @@ local statusNames = {active = "In your log", completed = "Completed", archived =
 local icons = {quest = "Interface\\Icons\\INV_Misc_Scroll_03", exploration = "Interface\\Icons\\INV_Misc_Map_01",
   dungeon = "Interface\\Icons\\INV_Misc_Key_03", note = "Interface\\Icons\\INV_Misc_Note_01", milestone = "Interface\\Icons\\INV_Misc_EngGizmos_12"}
 local render, selectEntry, saveDraft, createBook, layoutNotes
+local DELETE_NOTE_DIALOG = "FOREVER_WAYFINDER_DELETE_NOTE"
 local fontRoles = {[10]="meta", [11]="label", [12]="control", [13]="entry", [14]="body"}
 
 local function color(region, value, texture)
@@ -127,6 +128,34 @@ local function feedback(message, success)
   color(book.feedback, success == false and ink.headerError or ink.headerSuccess)
 end
 
+local function requestDeleteNote(id)
+  local entry = journal.Entry(id)
+  if not entry or entry.kind ~= "note" then return end
+  if not StaticPopupDialogs or not StaticPopup_Show then
+    feedback("Could not open the delete confirmation. Reload the UI and try again.", false)
+    return
+  end
+  StaticPopupDialogs[DELETE_NOTE_DIALOG] = StaticPopupDialogs[DELETE_NOTE_DIALOG] or {
+    text = 'Delete this field note?\n\n"%s"\n\nThis cannot be undone.',
+    button1 = DELETE or "Delete", button2 = CANCEL or "Cancel",
+    timeout = 0, whileDead = 1, hideOnEscape = 1,
+    OnAccept = function(_, data)
+      local target = data and journal.Entry(data.id)
+      if not target or target.kind ~= "note" then return end
+      -- Confirmation belongs to the named record, even after a queued refresh.
+      if state.selectedID == target.id then state.dirty = false; state.selectedID = nil end
+      if journal.DeleteNote(target.id) then
+        render(true)
+        feedback("Field note deleted.", true)
+      else feedback("Could not delete this field note.", false) end
+    end,
+  }
+  -- Keep the captured ID stable if saving on blur reorders a filtered list.
+  book.noteTitle:ClearFocus(); book.note:ClearFocus(); book.tags:ClearFocus()
+  local popup = StaticPopup_Show(DELETE_NOTE_DIALOG, entry.title, nil, {id = id})
+  if not popup then feedback("Close another popup and try Delete again.", false) end
+end
+
 saveDraft = function(silent)
   if not book or not state.dirty or not state.selectedID then return true end
   local entry = journal.Entry(state.selectedID)
@@ -144,7 +173,6 @@ end
 local function changedDraft()
   if state.loading or not state.selectedID then return end
   state.dirty = true
-  book.deleteArmed = nil; book.delete:SetText("Delete")
   book.save:SetEnabled(true)
   feedback("Unsaved notes · Save to keep them", false)
 end
@@ -318,8 +346,7 @@ local function renderDetails(entry, resetScroll)
   book.welcome:SetShown(entry == nil)
   if not entry then feedback(""); return end
   if book.detailID ~= entry.id then
-    book.detailID, book.deleteArmed = entry.id, nil
-    book.delete:SetText("Delete")
+    book.detailID = entry.id
     book.noteScroll:SetVerticalScroll(0)
     state.notesExpanded = entry.kind == "note" or (entry.note ~= nil and entry.note ~= "")
   end
@@ -399,8 +426,6 @@ selectEntry = function(id, animate)
   dismissMenu()
   if not saveDraft(true) then return end
   state.selectedID, state.dirty = id, false
-  book.deleteArmed = nil
-  book.delete:SetText("Delete")
   feedback("")
   render(true)
   if animate then pageTurn() end
@@ -716,13 +741,16 @@ createBook = function()
   book.feedback:SetJustifyH("RIGHT")
   book.feedback:SetWordWrap(false)
   book.delete = button(book.selected, "Delete", 376, 550, 92, function()
-    if book.deleteArmed == state.selectedID then
-      state.dirty=false; journal.DeleteNote(state.selectedID); state.selectedID=nil; book.deleteArmed=nil; render(true)
-    else
-      book.deleteArmed=state.selectedID; book.delete:SetText("Confirm?"); feedback("Click Confirm? to delete this field note.",false)
-    end
+    local id = book.deleteTargetID or state.selectedID
+    book.deleteTargetID = nil
+    requestDeleteNote(id)
   end)
-  tooltip(book.delete, "Delete this field note", "Click twice to confirm. Quest and exploration records are kept.")
+  book.delete:SetScript("OnMouseDown", function() book.deleteTargetID = state.selectedID end)
+  tooltip(book.delete, "Delete this field note", "Opens a confirmation before deleting this personal field note.")
+  book.delete:HookScript("OnLeave", function() book.deleteTargetID = nil end)
+  -- The tall note editor must not swallow clicks on the footer controls.
+  local footerLevel = book.note:GetFrameLevel() + 2
+  for _, control in ipairs({book.tags.shell, book.save, book.delete}) do control:SetFrameLevel(footerLevel) end
   book.welcome = CreateFrame("Frame", nil, book.rightPage); book.welcome:SetAllPoints(book.rightPage)
   local crest = book.welcome:CreateTexture(nil, "ARTWORK")
   crest:SetPoint("TOPLEFT", 189, -158); crest:SetSize(112,112)
@@ -745,7 +773,8 @@ createBook = function()
   end)
   book:SetScript("OnHide", function()
     saveDraft(true); dismissMenu(); play("IG_SPELLBOOK_CLOSE")
-    book.deleteArmed = nil; book.delete:SetText("Delete")
+    if StaticPopup_Hide then StaticPopup_Hide(DELETE_NOTE_DIALOG) end
+    book.deleteTargetID = nil
     book.search:ClearFocus(); book.noteTitle:ClearFocus(); book.note:ClearFocus(); book.tags:ClearFocus()
     book.pages:SetAlpha(1); book:SetScript("OnUpdate", nil)
   end)

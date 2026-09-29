@@ -15,7 +15,7 @@ TOC = ADDON / "ForeverWayfinder.toc"
 STAMP = (2026, 9, 27, 0, 0, 0)
 
 
-def release_files() -> tuple[str, list[tuple[Path, str]]]:
+def release_files(include_art_sources: bool = False) -> tuple[str, list[tuple[Path, str]]]:
     toc = TOC.read_text(encoding="utf-8")
     match = re.search(r"^## Version:\s*([^\s]+)\s*$", toc, re.MULTILINE)
     if not match:
@@ -48,16 +48,22 @@ def release_files() -> tuple[str, list[tuple[Path, str]]]:
     for source in sorted((ROOT / "tests").glob("*.lua")):
         members.append((source, "ForeverWayfinder/Source/tests/" + source.name))
     for source in sorted((ROOT / "art").iterdir()):
-        if source.is_file():
+        if source.is_file() and (include_art_sources or source.suffix.lower() != ".png"):
             members.append((source, "ForeverWayfinder/Source/art/" + source.name))
+    if include_art_sources:
+        # Preserve the repository layout so the extracted source can be rebuilt.
+        prefix = f"ForeverWayfinder-{version}-source/"
+        members = [(source, prefix + source.relative_to(ROOT).as_posix()) for source, _ in members]
+        members.append((ROOT / "RELEASE.md", prefix + "RELEASE.md"))
     if not members or any(not source.is_file() for source, _ in members):
         raise FileNotFoundError("Release source file missing")
     return version, sorted(members, key=lambda item: item[1])
 
 
-def build(output: Path | None = None) -> Path:
-    version, members = release_files()
-    output = output or ROOT / "dist" / f"ForeverWayfinder-{version}-beta.zip"
+def build(output: Path | None = None, include_art_sources: bool = False) -> Path:
+    version, members = release_files(include_art_sources)
+    suffix = "source" if include_art_sources else "beta"
+    output = output or ROOT / "dist" / f"ForeverWayfinder-{version}-{suffix}.zip"
     output.parent.mkdir(parents=True, exist_ok=True)
     expected = {name: source.read_bytes() for source, name in members}
     with ZipFile(output, "w") as archive:
@@ -80,5 +86,6 @@ def build(output: Path | None = None) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--source", action="store_true", help="Include original PNG artwork in a separate full source archive.")
     args = parser.parse_args()
-    build(args.output)
+    build(args.output, include_art_sources=args.source)

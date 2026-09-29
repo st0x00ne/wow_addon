@@ -56,9 +56,37 @@ book.noteTitle:SetText("Trail with a view"); book.note:SetText(string.rep("A lon
 assert(book.note:GetHeight()>book.noteScroll:GetHeight(),"long notes did not grow their scroll child")
 mock.click(book.save)
 assert(not book.save.enabled and j.Entry(selected.id).title=="Trail with a view")
+assert(book.delete:GetFrameLevel()>book.note:GetFrameLevel(),"long-note editor sits above Delete and can intercept its clicks")
+assert(book.save:GetFrameLevel()>book.note:GetFrameLevel() and book.tags:GetFrameLevel()>book.note:GetFrameLevel())
 local oldCount=#j.Database().entries
-mock.click(book.delete); assert(#j.Database().entries==oldCount,"first delete click removed a note")
-mock.click(book.delete); assert(#j.Database().entries==oldCount-1)
+mock.pointerClick(book.delete)
+assert(#j.Database().entries==oldCount,"opening delete confirmation removed a note")
+assert(mock.popup and mock.popup.data.id==selected.id and mock.popup.text:find(selected.title,1,true))
+mock.cancelPopup(); assert(j.Entry(selected.id),"cancel deleted the field note")
+-- Save-on-blur and queued refreshes must not change the deletion target.
+book.note:SetFocus(); book.note:SetText("An unsaved observation to keep when I cancel.")
+mock.pointerClick(book.delete)
+assert(mock.popup.data.id==selected.id)
+mock.cancelPopup(); assert(j.Entry(selected.id).note:find("unsaved observation",1,true))
+mock.pointerClick(book.delete); addon.RefreshJournal(); mock.flush()
+assert(mock.popup.data.id==selected.id)
+mock.acceptPopup()
+assert(not j.Entry(selected.id) and #j.Database().entries==oldCount-1,"confirmation did not delete the named note")
+-- Failure to open a native popup leaves records intact and gives feedback.
+oldCount=#j.Database().entries; mock.popupUnavailable=true
+mock.pointerClick(book.delete)
+assert(#j.Database().entries==oldCount and book.feedback:GetText():find("popup",1,true))
+mock.popupUnavailable=nil
+-- Switching entries cannot redirect the named confirmation target.
+local target=book.rows[1].entry
+mock.pointerClick(book.delete); local targetID=mock.popup.data.id
+assert(targetID==target.id)
+mock.click(book.rows[2]); local survivor=book.rows[2].entry
+mock.acceptPopup()
+assert(not j.Entry(targetID) and j.Entry(survivor.id),"selection change redirected deletion")
+mock.pointerClick(book.delete); book:Hide()
+assert(not mock.popup,"closing the journal left a delete confirmation open")
+addon.ToggleJournal(); mock.flush()
 -- Search, class, character, race, faction, status and chapter filters combine.
 book.search:SetText(""); mock.flush()
 mock.click(book.filters[2]); assert(book.menu:IsShown())
