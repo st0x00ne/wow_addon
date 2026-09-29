@@ -3,6 +3,7 @@
 local _, addon = ...
 local style = addon.ReadingStyle
 local panel, scrollChild, titleText, footerText
+local showWhere
 local PANEL_WIDTH, CONTENT_WIDTH = 438, 374
 local lines = {}
 local clickRows = {}
@@ -330,6 +331,20 @@ local function createPanel()
   style.Font(panel.readingLabel, "meta")
   panel.readingLabel:SetTextColor(ink.pale[1], ink.pale[2], ink.pale[3]); panel.readingLabel:SetText("Choose your reading size")
 
+  panel.whereCategories = {}
+  for index, category in ipairs({{"all", "All"}, {"class", "Class"}, {"special", "Special"}, {"zones", "Zones"}}) do
+    local key, label = category[1], category[2]
+    local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    button:SetPoint("TOPLEFT", 18 + (index - 1) * 102, -114)
+    button:SetSize(94, 28); button:SetText(label); style.Button(button)
+    button:SetScript("OnClick", function()
+      panel.whereCategory = key
+      showWhere()
+    end)
+    button:Hide()
+    panel.whereCategories[key] = button
+  end
+
   footerText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   footerText:SetPoint("BOTTOMLEFT", 20, 10)
   footerText:SetSize(PANEL_WIDTH - 40, 42)
@@ -341,7 +356,7 @@ local function createPanel()
 end
 
 local function setPanelTheme(mode)
-  local top = 114
+  local top = mode == "where" and 150 or 114
   panel.paper:ClearAllPoints()
   panel.paper:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -top)
   panel.paper:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -12, 52)
@@ -351,6 +366,12 @@ local function setPanelTheme(mode)
   panel.showAll:SetShown(mode == "chain")
   panel.hideAll:SetShown(mode == "chain")
   panel.readingLabel:SetShown(mode ~= "chain")
+  for key, button in pairs(panel.whereCategories) do
+    button:SetShown(mode == "where")
+    if button.SetButtonState then
+      button:SetButtonState(key == (panel.whereCategory or "all") and "PUSHED" or "NORMAL", key == (panel.whereCategory or "all"))
+    end
+  end
   panel.mode = mode
 end
 
@@ -689,17 +710,135 @@ local function showQuestStarter(mapID, quest)
   end
 end
 
-local function showWhere(preserveScroll)
+showWhere = function(preserveScroll)
   createPanel()
   setPanelTheme("where")
   local entries = {}
   local zones, currentMap, currentZone = addon.GetZoneSuggestions()
   local level = UnitLevel("player") or 1
-  panel.subtitle:SetText("Level " .. level .. " · Possible Classic quest starts")
-  if #zones == 0 then
+  local className = UnitClass("player") or "Class"
+  local category = panel.whereCategory or "all"
+  local priorities = addon.GetClassQuestPriorities()
+  local essentials, otherClass = {}, {}
+  for _, option in ipairs(priorities) do
+    local target = option.priority == 1 and essentials or otherClass
+    target[#target + 1] = option
+  end
+  panel.subtitle:SetText("Level " .. level .. " · " .. ({all="Recommended quests", class="Class quests", special="Special quests", zones="Questing zones"})[category])
+  local function sectionHeading(text)
+    local heading = append(entries, text, ink.gold, 8)
+    heading.font = GameFontNormalLarge or GameFontNormal
+    heading.kind = "zone"
+  end
+  local function classSection(options, title, fold)
+    sectionHeading(title)
+    insetLine(entries, (options[1] and options[1].priority == 1 and "Ability and training routes" or "Class quests") .. " · Classic reference", ink.muted, 8)
+    local limit = fold and not panel.showAllClasses and 3 or #options
+    for index, option in ipairs(options) do
+      if index > limit then break end
+      local selected = option
+      local quest = option.quest
+      local icon = option.active and "ActiveQuestIcon" or "AvailableQuestIcon"
+      local onClick
+      if option.active then
+        onClick = function()
+          if ToggleQuestLog and (not QuestMapFrame or not QuestMapFrame:IsShown()) then ToggleQuestLog() end
+          if QuestMapFrame_ShowQuestDetails then QuestMapFrame_ShowQuestDetails(selected.quest[1]) end
+        end
+      elseif option.mapID then
+        onClick = function() showQuestStarter(selected.mapID, selected.quest) end
+      end
+      local row = append(entries, "|TInterface\\GossipFrame\\" .. icon .. ":18:18:0:0|t [" .. quest[4] .. "] " .. quest[2],
+        onClick and ink.link or ink.body, 4, onClick, option.active and "Open this quest in your log."
+          or "Set a waypoint to the Classic starter. Forever may change this ability route. Replaces your current waypoint.")
+      row.kind = "quest"
+      insetLine(entries, option.priority == 1 and ((option.routeKey == "locks" and "Skill practice · " or "Ability route · ") .. option.label) or "Class quest",
+        ink.heading, 4)
+      if option.active then
+        insetLine(entries, "In your log · Click to continue", ink.success, 12)
+      else
+        local info = option.mapID and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(option.mapID)
+        local location = info and info.name or quest[14] or ("Map " .. option.mapID)
+        insetLine(entries, location .. " · " .. quest[11], ink.muted, 12)
+        if not option.mapID then insetLine(entries, "No starter coordinates in the Classic reference.", ink.muted, 12) end
+      end
+    end
+    if fold and #options > 3 then
+      append(entries, panel.showAllClasses and "› Show fewer class priorities" or "› Show all " .. #options .. " class priorities",
+        ink.link, 12, function() panel.showAllClasses = not panel.showAllClasses; showWhere(true) end,
+        "Expand or fold the class quest list.")
+    end
+    insetLine(entries, "Forever can change unlocks. Check your trainer if a Classic route is unavailable.", ink.muted, 18)
+  end
+  if category == "class" then
+    if #priorities > 0 then classSection(priorities, className .. " priorities", true)
+    else
+      sectionHeading(className .. " priorities")
+      insetLine(entries, "No available class quest matched this reference. Check your live trainer for Forever changes.", ink.muted, 12)
+    end
+  elseif category == "all" and #essentials > 0 then
+    classSection(essentials, className .. " priorities", true)
+  end
+  if category == "all" or category == "special" then
+    local specials, specialCount = addon.GetSpecialQuestSuggestions(category == "all" and 3 or nil)
+    if specialCount > 0 or category == "special" then
+      sectionHeading("Special quests")
+      insetLine(entries, "Standout reward chains · Classic reference", ink.muted, 8)
+      for _, option in ipairs(specials) do
+        local selected, quest, route = option, option.quest, option.route
+        local heading = append(entries, route.title, ink.heading, 5)
+        heading.role = "heading"
+        insetLine(entries, route.reason, ink.body, 5)
+        insetLine(entries, "Classic finale · Lv " .. route.level .. " · Reward references", ink.muted, 5)
+        for _, reward in ipairs(route.rewards) do
+          local icon = safeCall(GetItemIcon, reward[1]) or safeCall(C_Item and C_Item.GetItemIconByID, reward[1])
+          local row = insetLine(entries, (icon and "|T" .. icon .. ":18:18:0:0|t " or "") .. reward[2], ink.link, 4)
+          row.itemID = reward[1]
+          row.role = "entry"
+        end
+        local onClick
+        if option.active then
+          onClick = function()
+            if ToggleQuestLog and (not QuestMapFrame or not QuestMapFrame:IsShown()) then ToggleQuestLog() end
+            if QuestMapFrame_ShowQuestDetails then QuestMapFrame_ShowQuestDetails(selected.quest[1]) end
+          end
+        elseif option.mapID then onClick = function() showQuestStarter(selected.mapID, selected.quest) end end
+        local step = append(entries, "› " .. (option.active and "In your log: " or "Next step: ") .. quest[2],
+          onClick and ink.link or ink.body, 4, onClick,
+          option.active and "Open your current quest in the log." or "Set a waypoint to this Classic starter. Replaces your current waypoint.")
+        step.kind = "quest"
+        if not option.active then
+          local mapInfo = option.mapID and safeCall(C_Map and C_Map.GetMapInfo, option.mapID)
+          insetLine(entries, option.mapID and ((mapInfo and mapInfo.name or "Map " .. option.mapID) .. " · " .. quest[11])
+            or ("Start with the item in your bags: " .. quest[11]), ink.muted, 6)
+        end
+        if addon.GetClassicChain(quest[1]) then
+          insetLine(entries, "› View current Classic chain", ink.link, 8,
+            function() showChain(selected.quest[1]) end, "Open the Classic reference segment for this step.")
+        end
+        entries[#entries].gap = 20
+      end
+      if specialCount == 0 then insetLine(entries, "No unfinished reward chain matched your class, level, and progress. More chains become available as you level.", ink.muted, 12) end
+      if category == "all" and specialCount > 3 then
+        append(entries, "› Browse all " .. specialCount .. " special quests", ink.link, 12,
+          function() panel.whereCategory = "special"; showWhere() end, "Open the Special category.")
+      end
+      insetLine(entries, "Forever can change rewards. Check the offer in your live quest log.", ink.muted, 18)
+    end
+  end
+  if category == "all" and #otherClass > 0 then
+    local preview = {}
+    for index = 1, math.min(#otherClass, 2) do preview[index] = otherClass[index] end
+    classSection(preview, "Other " .. className .. " quests", false)
+    if #otherClass > 2 then append(entries, "› Browse class quests", ink.link, 14,
+      function() panel.whereCategory = "class"; showWhere() end) end
+  end
+  local showZones = category == "all" or category == "zones"
+  if showZones and #entries > 0 then sectionHeading("Places to quest next") end
+  if showZones and #zones == 0 then
     append(entries, "No nearby level bands in this small guide yet.", ink.muted)
   end
-  for index, option in ipairs(zones) do
+  for index, option in ipairs(showZones and zones or {}) do
     local zone = option.zone
     local mapID = zone[1]
     local mapInfo = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
@@ -733,7 +872,8 @@ local function showWhere(preserveScroll)
     entries[#entries].gap = 20
   end
   titleText:SetText("Where next?")
-  footerText:SetText("Click a Classic quest for its starter waypoint. Forever quests stay a surprise.")
+  footerText:SetText(category == "special" and "Hover rewards for item details. Click the next step to continue."
+    or "Click a Classic quest for its starter waypoint. Forever quests stay a surprise.")
   positionPanel()
   renderLines(entries, preserveScroll)
   panel.mode = "where"
@@ -995,9 +1135,22 @@ end
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_LOGIN")
-loader:SetScript("OnEvent", function()
-  tryInstall()
-  tryInstallTracker()
+loader:RegisterEvent("QUEST_LOG_UPDATE")
+loader:RegisterEvent("SPELLS_CHANGED")
+loader:RegisterEvent("PLAYER_LEVEL_UP")
+loader:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+local whereRefreshPending = false
+loader:SetScript("OnEvent", function(_, event)
+  if event == "ADDON_LOADED" or event == "PLAYER_LOGIN" then
+    tryInstall()
+    tryInstallTracker()
+  elseif panel and panel:IsShown() and panel.mode == "where" and not whereRefreshPending then
+    whereRefreshPending = true
+    C_Timer.After(0, function()
+      whereRefreshPending = false
+      if panel:IsShown() and panel.mode == "where" then showWhere(true) end
+    end)
+  end
 end)
 tryInstall()
 tryInstallTracker()

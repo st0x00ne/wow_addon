@@ -2,13 +2,15 @@
 ## Title: Forever Wayfinder
 ## Notes: A personal Discovery Journal, quest markers, Classic chains, and zone suggestions for WoW Forever.
 ## Author: Forever Wayfinder contributors
-## Version: 0.5.4
+## Version: 0.5.6
 ## IconTexture: Interface\AddOns\ForeverWayfinder\Media\Icon
 ## SavedVariables: ForeverWayfinderJournal
 
 Data\ClassicQuests.lua
 Data\ClassicChainDetails.lua
 Data\QuestOpportunities.lua
+Data\ClassQuestPriorities.lua
+Data\SpecialQuests.lua
 Data\Zones.lua
 Data\VerifiedRewards.lua
 Core.lua

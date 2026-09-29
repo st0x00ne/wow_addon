@@ -8,7 +8,8 @@ A quest companion and personal Discovery Journal for **World of Warcraft: Foreve
 - **Search and filters:** Find entries by zone, type, class, character, and more.
 - **Personal notes:** Add notes and tags, favorite entries, and mark places to revisit.
 - **Classic quest chains:** View connected quests, objectives, quest givers, requirements, reference rewards, and map waypoints.
-- **Where next?:** Find possible Classic quest starts based on your level, character, and quest progress.
+- **Where next?:** Prioritizes class abilities and training, then suggests Classic quest starts for your level and progress.
+- **Special quests:** Browse standout reward chains, their reward items, and your next available step.
 - **Quest markers:** `∞` marks possible Forever quests missing from the Classic reference. `D` marks dungeon quests.
 - **Reading options:** Choose Standard, Large, or Extra Large text.
 

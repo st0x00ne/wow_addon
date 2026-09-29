@@ -6,12 +6,14 @@ another player's computer. It is standalone and does not require Questie.
 
 ## Discord message
 
-Version 0.5.4 fixes clicks on the field-note footer below long notes and opens
-a visible confirmation dialog when deleting a field note. The upload zip omits
-original PNG artwork; the game textures are unchanged. Original images remain
-in the repository and the separate source archive.
+Version 0.5.6 adds All, Class, Special, and Zones categories to Where next?.
+Special contains 15 curated reward chains, with named items, item tooltips,
+finale levels, and your next available or active quest step. Class essentials
+come first in All, then special rewards, other class quests, and zones.
+The catalog checks prerequisites, completion, and starter-item possession.
+Rewards and routes are Classic references; Forever may change them.
 
-> **Forever Wayfinder 0.5.4 beta** — a quest companion and personal Discovery Journal for WoW Forever.
+> **Forever Wayfinder 0.5.6 beta** — a quest companion and personal Discovery Journal for WoW Forever.
 > It marks possible new Forever quests without revealing their future steps,
 > labels dungeon quests, shows expandable details for known Classic chains,
 > and suggests a few places to explore next. Classic locations and future
@@ -28,6 +30,12 @@ in the repository and the separate source archive.
 > Fold personal notes to give a quest's story more room on the right page.
 > Field-note Delete now opens a visible confirmation, and footer controls stay
 > above long notes. The download is smaller with the same in-game artwork.
+> Where next? now puts class priorities first: abilities, forms, pets, totems,
+> stances, poisons, and class training before ordinary zone suggestions.
+> These are Classic references; check your trainer if Forever changed a route.
+> Browse the new Special category for standout reward chains, their payoff items,
+> and your next quest step. Hover an item for its tooltip. Verify actual rewards
+> in your live Forever quest log.
 >
 > Download the attached zip and extract it into
 > `World of Warcraft/_classic_beta_/Interface/AddOns/`. You should end up with
@@ -49,6 +57,12 @@ in the repository and the separate source archive.
 - Check a known Classic quest, a candidate Forever quest, and a dungeon quest
   in both the log and objective tracker.
 - Use a Where next? starter waypoint and a Classic chain start/turn-in link.
+- Check class priorities above zones, including an older unfinished ability
+  route. Click an active priority to open its log entry. Expand and fold the
+  class list; confirm completed routes disappear and no hostile starter is offered.
+- Switch between All, Class, Special, and Zones. In Special, hover a reward,
+  use a next-step waypoint, and open an active quest. Check that a completed
+  finale disappears and an item-start quest requires the item in your bags.
 - Reload the UI and repeat the main interactions without Lua errors.
 - Click the minimap compass to open and close the journal. Drag it around the
   minimap, then `/reload` and confirm its position is preserved.

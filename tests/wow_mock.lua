@@ -227,7 +227,9 @@ GameTooltip=mock.object("Tooltip","GameTooltip")
 UISpecialFrames={}; SlashCmdList={}
 C_Timer={After=function(_,callback) mock.timers[#mock.timers+1]=callback end}
 C_Texture={GetAtlasInfo=function() return {} end}
-Enum={QuestTag={Dungeon=81}}
+Enum={QuestTag={Dungeon=81,Class=41},SpellBookSpellBank={Player=0}}
+C_SpellBook={IsSpellInSpellBook=function(id) return mock.knownSpells and mock.knownSpells[id] or false end}
+C_SpellBook.IsSpellKnown=C_SpellBook.IsSpellInSpellBook
 function GetServerTime() return mock.clock end
 function time() return mock.clock end
 function date(format) return format:find("%%Y") and "Sep 27, 2026 · 18:42" or "Sep 27" end
@@ -236,14 +238,16 @@ function UnitName(unit) return unit=="player" and mock.player.name or mock.npc e
 function UnitGUID() return mock.player.guid end
 function GetRealmName() return mock.player.realm end
 function UnitLevel() return mock.player.level end
-function UnitClass() return mock.player.className,mock.player.class,mock.player.class=="MAGE" and 8 or 1 end
-function UnitRace() return mock.player.race,mock.player.race,mock.player.race=="Undead" and 5 or 1 end
+local classIDs={WARRIOR=1,PALADIN=2,HUNTER=3,ROGUE=4,PRIEST=5,SHAMAN=7,MAGE=8,WARLOCK=9,DRUID=11}
+local raceIDs={Human=1,Orc=2,Dwarf=3,NightElf=4,Undead=5,Tauren=6,Gnome=7,Troll=8}
+function UnitClass() return mock.player.className,mock.player.class,classIDs[mock.player.class] end
+function UnitRace() return mock.player.race,mock.player.race,raceIDs[mock.player.race] end
 function UnitFactionGroup() return mock.player.faction end
 function GetRealZoneText() return mock.zone end
 function GetSubZoneText() return mock.subzone end
 function IsInInstance() return mock.inside or false,mock.instanceType end
 function GetInstanceInfo() return mock.instanceName,mock.instanceType,nil,nil,nil,nil,nil,mock.instanceID end
-C_Map={GetBestMapForUnit=function() return mock.mapID end,GetMapInfo=function() return {name=mock.zone} end,
+C_Map={GetBestMapForUnit=function() return mock.mapID end,GetMapInfo=function(id) return {name=mock.mapNames and mock.mapNames[id] or mock.zone} end,
   GetPlayerMapPosition=function() return {GetXY=function() return .6144,.1906 end} end,
   CanSetUserWaypointOnMap=function() return true end,SetUserWaypoint=function(point) mock.waypoint=point; return true end}
 UiMapPoint={CreateFromCoordinates=function(map,x,y) return {map=map,x=x,y=y} end}
@@ -257,7 +261,7 @@ C_QuestLog={GetSelectedQuest=function() return mock.selected end,
   GetQuestObjectives=function(id) return {{text="Collect 10 Gray Bear Tongues",numFulfilled=0,numRequired=10}} end,
   IsOnQuest=function(id) return mock.onQuest and mock.onQuest[id] or C_QuestLog.GetLogIndexForQuestID(id)~=nil end,
   IsQuestFlaggedCompleted=function(id) return mock.completed[id] or false end,
-  GetQuestTagInfo=function(id) return mock.dungeonQuest==id and {tagID=81} or nil end,
+  GetQuestTagInfo=function(id) return mock.dungeonQuest==id and {tagID=81} or (mock.classQuest==id and {tagID=41} or nil) end,
   ShouldShowQuestRewards=function() return true end}
 function GetQuestID() return mock.dialogID end
 function GetTitleText() return mock.dialogTitle end
@@ -271,6 +275,7 @@ function GetNumQuestLogChoices() return 0 end
 function GetQuestLogRewardInfo() return "Apothecary's Gloves",134400,1,nil,nil,3565 end
 function GetItemInfo(id) return "Item "..id end
 function GetItemIcon() return 134400 end
+function GetItemCount(id) return mock.itemCounts and mock.itemCounts[id] or 0 end
 function GetCoinTextureString(money) return money.." copper" end
 SOUNDKIT={IG_SPELLBOOK_OPEN=1,IG_SPELLBOOK_CLOSE=2,IG_ABILITY_PAGE_TURN=3}
 function PlaySound(id) mock.lastSound=id end
@@ -283,7 +288,7 @@ function QuestMapFrame_ShowQuestDetails(id) mock.openQuest=id end
 QuestMapFrame=nil; QuestScrollFrame=nil
 function mock.load(root, withUI)
   local addon={}
-  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/Zones.lua","Data/VerifiedRewards.lua","Core.lua","Journal.lua"}) do
+  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/ClassQuestPriorities.lua","Data/SpecialQuests.lua","Data/Zones.lua","Data/VerifiedRewards.lua","Core.lua","Journal.lua"}) do
     assert(loadfile(root.."/ForeverWayfinder/"..file))("ForeverWayfinder",addon)
   end
   if withUI then

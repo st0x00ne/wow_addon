@@ -7,9 +7,21 @@ XP and map data. Those subsets were transformed for Forever Wayfinder on
 2026-09-27. QuestieDB is GPL-3.0 and remains credited to its contributors.
 
 The generated files are `Data/ClassicQuests.lua`, `Data/ClassicChainDetails.lua`,
-and `Data/QuestOpportunities.lua`. The included `Source/tools` scripts show how
+`Data/QuestOpportunities.lua`, `Data/ClassQuestPriorities.lua`, and
+`Data/SpecialQuests.lua`. The included `Source/tools` scripts show how
 they were made. See DEVELOPMENT.md for the specific upstream files and refresh
 commands. The game loads only the Lua files named in `ForeverWayfinder.toc`.
+
+The class priority subset was generated on 2026-09-28. Its curated ability
+labels and player spell guards were checked against the
+[CMaNGOS Classic quest database](https://github.com/cmangos/classic-db)
+and [TellMeWhen's ability references](https://github.com/ascott18/TellMeWhen).
+No code from those projects is embedded in the addon. Classic references are
+not a claim about verified Forever unlock requirements.
+
+The Special quests catalog was generated on 2026-09-28 from the QuestieDB
+Classic quest, item reward, and starter tables. Its selection is curated;
+the named reward references are not guaranteed live Forever offers.
 
 World of Warcraft and its art are trademarks and property of Blizzard
 Entertainment. Forever Wayfinder is a community addon.

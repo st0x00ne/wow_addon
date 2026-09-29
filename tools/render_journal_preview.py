@@ -122,11 +122,12 @@ def render(nodes, output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua")
-    parser.add_argument("--state",choices=("quest","note","empty","chain","where","book"),default="quest")
+    parser.add_argument("--state",choices=("quest","note","empty","chain","where","class","special","book"),default="quest")
     parser.add_argument("--text-size",choices=("standard","large","extra"),default="standard")
     parser.add_argument("--output",type=Path,default=ROOT/"dist/journal-layout-preview.png")
     args=parser.parse_args()
-    script="reading_test.lua" if args.state in ("chain","where","book") else "journal_ui_test.lua"
+    script="special_quests_test.lua" if args.state=="special" else "class_priority_test.lua" if args.state=="class" else (
+        "reading_test.lua" if args.state in ("chain","where","book") else "journal_ui_test.lua")
     with tempfile.TemporaryDirectory(prefix="fw-reading-preview-") as folder:
         metrics=Path(folder)/"font-metrics.lua"
         font_metrics(metrics)
