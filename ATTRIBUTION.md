@@ -8,7 +8,7 @@ XP and map data. Those subsets were transformed for Forever Wayfinder on
 
 The generated files are `Data/ClassicQuests.lua`, `Data/ClassicChainDetails.lua`,
 and `Data/QuestOpportunities.lua`. The included `Source/tools` scripts show how
-they were made. See the README for the specific upstream files and refresh
+they were made. See DEVELOPMENT.md for the specific upstream files and refresh
 commands. The game loads only the Lua files named in `ForeverWayfinder.toc`.
 
 World of Warcraft and its art are trademarks and property of Blizzard
