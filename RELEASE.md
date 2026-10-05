@@ -1,6 +1,35 @@
 # Sharing Forever Wayfinder
 
-The current package is a **WoW Forever beta** build for client interface
+## Atlas release · 0.7.0-alpha
+
+This release gives the Atlas a new illustrated frame and 38 zone
+paintings. **Zones** opens a selected-zone overview with a landscape banner,
+Classic progress, Forever discoveries, and a continent record. **Quests** opens
+the Classic or Forever checklist, with an unfinished filter. **Class quests**
+has its own chapter and score. Class quests do not inflate zone totals.
+Aligned controls, stronger contrast, and a **Text** size button improve reading.
+Drag an empty area to move the window; its position is saved.
+
+Clicking **To find** on a Classic quest with a mapped starter opens its map and
+sets a waypoint; **Map only** means no reliable starter coordinate is bundled.
+The landscape illustrations are atmosphere, not navigation maps.
+Fully exit WoW, extract the
+`ForeverWayfinder` folder from the upload archive into
+`World of Warcraft/_classic_beta_/Interface/AddOns/`, and replace the older
+`ForeverWayfinder` folder. The result must be
+`AddOns/ForeverWayfinder/ForeverWayfinder.toc`. Restart the game and type
+`/fw atlas`, or open the Discovery Journal and click **Atlas** at the bottom.
+This Atlas has offline test and layout coverage but still needs in-game beta
+client verification.
+
+Upload `dist/ForeverWayfinder-0.7.0-alpha.zip` as an alpha release. It contains one
+installable addon folder, game textures, readable Lua data, build tools, tests,
+artwork prompts, attribution, and the GPL-3.0 license. Original PNG artwork is
+available in the repository and the separate `-source.zip` archive.
+
+The notes below describe the earlier 0.5.6 beta release.
+
+The 0.5.6 package is a **WoW Forever beta** build for client interface
 `16001`. Share it as a test build until it has had a clean-install pass on
 another player's computer. It is standalone and does not require Questie.
 

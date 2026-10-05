@@ -98,6 +98,7 @@ end
 function methods:SetTextColor(...) self.color={...} end
 function methods:SetColorTexture(...) self.color={...}; self.texture=nil end
 function methods:SetTexture(value) self.texture=value end
+function methods:SetTexCoord(...) self.texCoord={...} end
 function methods:SetHighlightTexture(value) self.highlightTexture=value end
 function methods:SetAtlas(value) self.atlas=value end
 function methods:SetVertexColor(...) self.vertexColor={...} end
@@ -113,11 +114,11 @@ function methods:SetClampedToScreen(value) self.clamped=value end
 function methods:SetMovable(value) self.movable=value end
 function methods:EnableMouse(value) self.mouse=value end
 function methods:EnableMouseWheel(value) self.wheel=value end
-function methods:RegisterForDrag() end
+function methods:RegisterForDrag(...) self.dragButtons={...} end
 function methods:RegisterForClicks(...) self.clicks={...} end
 function methods:SetMouseClickEnabled() end
-function methods:StartMoving() end
-function methods:StopMovingOrSizing() end
+function methods:StartMoving() self.moving=true end
+function methods:StopMovingOrSizing() self.moving=false end
 function methods:SetScrollChild(value) self.scrollChild=value; value.scrollParent=self end
 function methods:GetVerticalScroll() return self.scroll or 0 end
 function methods:SetVerticalScroll(value) assert(value>=0); self.scroll=value end
@@ -288,13 +289,14 @@ function QuestMapFrame_ShowQuestDetails(id) mock.openQuest=id end
 QuestMapFrame=nil; QuestScrollFrame=nil
 function mock.load(root, withUI)
   local addon={}
-  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/ClassQuestPriorities.lua","Data/SpecialQuests.lua","Data/Zones.lua","Data/VerifiedRewards.lua","Core.lua","Journal.lua"}) do
+  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/ClassQuestPriorities.lua","Data/SpecialQuests.lua","Data/Zones.lua","Data/AtlasPresentation.lua","Data/AtlasQuestCatalog.lua","Data/ForeverQuests.lua","Data/VerifiedRewards.lua","Core.lua","Journal.lua","Atlas.lua"}) do
     assert(loadfile(root.."/ForeverWayfinder/"..file))("ForeverWayfinder",addon)
   end
   if withUI then
     assert(loadfile(root.."/ForeverWayfinder/ReadingStyle.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/UI.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/JournalUI.lua"))("ForeverWayfinder",addon)
+    assert(loadfile(root.."/ForeverWayfinder/AtlasUI.lua"))("ForeverWayfinder",addon)
   end
   mock.fire("ADDON_LOADED","ForeverWayfinder")
   mock.fire("PLAYER_LOGIN")

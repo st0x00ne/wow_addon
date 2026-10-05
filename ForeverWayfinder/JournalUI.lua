@@ -768,6 +768,9 @@ createBook = function()
   book.welcomeBody:ClearAllPoints()
   book.welcomeBody:SetPoint("TOPLEFT", 70, -298 - book.welcomeTitle:GetStringHeight() - 18)
   book.footer = font(book.body, 11, ink.pale, 58, 615, 798)
+  button(book.body, "Atlas", 770, 607, 105, function()
+    if saveDraft(true) then book:Hide(); if addon.ShowAtlas then addon.ShowAtlas() end end
+  end)
   button(book.body, "Where next?", 885, 607, 112, function()
     saveDraft(true); book:Hide(); if addon.ShowWhereNext then addon.ShowWhereNext() end
   end)

@@ -57,9 +57,9 @@ for order,v in ipairs(mock.objects) do
       ancestor=ancestor.parent
     end
     result[#result+1]={rect=rect(v),clip=clip,kind=v.kind,template=v.template,layer=layer,level=level,strata=stratum,order=order,
-      text=v.text,color=v.color,texture=v.texture,backdrop=v.backdropColor,border=v.borderColor,
+      text=v.text,color=v.color,texture=v.texture,texCoord=v.texCoord,vertexColor=v.vertexColor,backdrop=v.backdropColor,border=v.borderColor,
       fontSize=v.fontSize or (v.normalFont and v.normalFont.fontSize),font=v.font,spacing=v.spacing,
-      wrap=v.wrap,justify=v.justifyH,checked=v.checked,enabled=v.enabled,alpha=v.alpha,masked=v.mask~=nil}
+      wrap=v.wrap,justify=v.justifyH,vjustify=v.justifyV,checked=v.checked,enabled=v.enabled,alpha=v.alpha,masked=v.mask~=nil}
   end
 end
 print(json(result))

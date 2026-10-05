@@ -49,8 +49,24 @@ def render(nodes, output):
             draw.rectangle((x, y, x + w, y + h), fill=rgba(node["backdrop"]), outline=rgba(node.get("border")), width=1)
         if kind == "Texture":
             texture = str(node.get("texture") or "")
-            if texture.endswith("JournalBook"):
+            media_prefix = "Interface\\AddOns\\ForeverWayfinder\\Media\\"
+            local_texture = ROOT / "ForeverWayfinder/Media" / (texture.removeprefix(media_prefix).replace("\\", "/") + ".tga")
+            if texture.startswith(media_prefix) and local_texture.is_file():
+                artwork = Image.open(local_texture).convert("RGBA")
+                if uv := node.get("texCoord"):
+                    artwork = artwork.crop((round(uv[0]*artwork.width),round(uv[2]*artwork.height),
+                        round(uv[1]*artwork.width),round(uv[3]*artwork.height)))
+                artwork = artwork.resize((round(w), round(h)), Image.Resampling.LANCZOS)
+                if node.get("masked"):
+                    mask = Image.new("L", artwork.size)
+                    ImageDraw.Draw(mask).ellipse((0, 0, artwork.width-1, artwork.height-1), fill=255)
+                    artwork.putalpha(mask)
+                layer.paste(artwork, (round(x), round(y)), artwork)
+            elif texture.endswith("JournalBook"):
                 artwork = Image.open(ROOT / "art/ForeverWayfinder-journal-book-source.png").convert("RGBA").resize((round(w), round(h)))
+                layer.paste(artwork, (round(x), round(y)))
+            elif texture.endswith("AtlasFrame"):
+                artwork = Image.open(ROOT / "art/AtlasFrame-source.png").convert("RGBA").resize((round(w), round(h)))
                 layer.paste(artwork, (round(x), round(y)))
             elif texture.endswith("Media\\Icon"):
                 icon = Image.open(ROOT / "art/ForeverWayfinder-compass-source.png").convert("RGBA").resize((round(w), round(h)))
@@ -109,7 +125,8 @@ def render(nodes, output):
                 tx = x
                 if is_native_button or node.get("justify") == "CENTER": tx += (w-draw.textlength(line,font=font))/2
                 elif node.get("justify") == "RIGHT": tx += w-draw.textlength(line,font=font)
-                ty=y+i*line_height + ((h-line_height)/2 if is_native_button else -2)
+                vertical = (h-line_height*len(lines))/2 if is_native_button or node.get("vjustify") == "MIDDLE" else -2
+                ty=y+i*line_height + vertical
                 draw.text((round(tx),round(ty)),line,font=font,fill=fill)
         clip = node["clip"]
         box = (round(max(0,clip["x"])),round(max(0,clip["y"])),round(min(canvas.width,clip["x"]+clip["w"])),round(min(canvas.height,clip["y"]+clip["h"])))
@@ -122,11 +139,11 @@ def render(nodes, output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua")
-    parser.add_argument("--state",choices=("quest","note","empty","chain","where","class","special","book"),default="quest")
+    parser.add_argument("--state",choices=("quest","note","empty","chain","where","class","special","book","atlas","atlas-quests","atlas-class"),default="quest")
     parser.add_argument("--text-size",choices=("standard","large","extra"),default="standard")
     parser.add_argument("--output",type=Path,default=ROOT/"dist/journal-layout-preview.png")
     args=parser.parse_args()
-    script="special_quests_test.lua" if args.state=="special" else "class_priority_test.lua" if args.state=="class" else (
+    script="atlas_test.lua" if args.state.startswith("atlas") else "special_quests_test.lua" if args.state=="special" else "class_priority_test.lua" if args.state=="class" else (
         "reading_test.lua" if args.state in ("chain","where","book") else "journal_ui_test.lua")
     with tempfile.TemporaryDirectory(prefix="fw-reading-preview-") as folder:
         metrics=Path(folder)/"font-metrics.lua"

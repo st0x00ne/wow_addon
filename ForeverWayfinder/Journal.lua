@@ -32,6 +32,7 @@ end
 function journal.Changed()
   if db then db.revision = (db.revision or 0) + 1 end
   if addon.RefreshJournal then addon.RefreshJournal() end
+  if addon.RefreshAtlas then addon.RefreshAtlas() end
 end
 
 function journal.Initialize()

@@ -7,9 +7,12 @@ local regions = setmetatable({}, {__mode = "k"})
 local buttonFonts
 local ink = {gold={1, .82, .40}, highlight={1, .94, .72}, disabled={.61, .57, .47}}
 local presets = {
-  standard = {name="Standard", body=16, meta=13, label=14, control=14, entry=16, heading=18, title=22, display=26},
-  large = {name="Large", body=18, meta=14, label=15, control=15, entry=17, heading=19, title=24, display=28},
-  extra = {name="Extra Large", body=20, meta=15, label=16, control=16, entry=18, heading=20, title=26, display=30},
+  standard = {name="Standard", body=16, meta=13, label=14, control=14, entry=16, heading=18, title=22, display=26,
+    atlasBody=17, atlasMeta=14, atlasLabel=15, atlasControl=15},
+  large = {name="Large", body=18, meta=14, label=15, control=15, entry=17, heading=19, title=24, display=28,
+    atlasBody=19, atlasMeta=15, atlasLabel=16, atlasControl=16},
+  extra = {name="Extra Large", body=20, meta=15, label=16, control=16, entry=18, heading=20, title=26, display=30,
+    atlasBody=20, atlasMeta=16, atlasLabel=17, atlasControl=17},
 }
 
 function style.Preset()
@@ -24,7 +27,7 @@ function style.Size(role) return presets[style.Preset()][role] or 16 end
 local function paint(region, spec)
   region:SetFont(spec.face, style.Size(spec.role), "")
   if region.SetShadowOffset then region:SetShadowOffset(0, 0) end
-  if region.SetSpacing then region:SetSpacing(spec.role == "body" and 3 or 0) end
+  if region.SetSpacing then region:SetSpacing((spec.role == "body" or spec.role == "atlasBody") and 3 or 0) end
 end
 
 function style.Font(region, role)
@@ -66,6 +69,7 @@ function style.Refresh()
   updateButtonFonts()
   if addon.RefreshPanelReadingStyle then addon.RefreshPanelReadingStyle() end
   if addon.RefreshJournalReadingStyle then addon.RefreshJournalReadingStyle() end
+  if addon.RefreshAtlasReadingStyle then addon.RefreshAtlasReadingStyle() end
 end
 
 function style.SetPreset(key)

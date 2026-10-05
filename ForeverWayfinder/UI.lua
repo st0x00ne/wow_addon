@@ -1117,6 +1117,8 @@ SlashCmdList.FOREVERWAYFINDER = function(message)
     end
   elseif command == "journal" or command == "journey" then
     addon.ToggleJournal()
+  elseif command == "atlas" then
+    addon.ToggleAtlas()
   elseif command == "journal status" then
     local db = addon.Journal.Database()
     print("Forever Wayfinder: " .. (db and #db.entries or 0) .. " journal entries; "
@@ -1128,7 +1130,7 @@ SlashCmdList.FOREVERWAYFINDER = function(message)
     if ok then print("Forever Wayfinder: Text size · " .. style.Name())
     else print("Forever Wayfinder: /fw text standard, large, or extra") end
   else
-    print("Forever Wayfinder: /fw where, /fw chain, /fw journal, or /fw text")
+    print("Forever Wayfinder: /fw where, /fw chain, /fw journal, /fw atlas, or /fw text")
   end
 end
 
