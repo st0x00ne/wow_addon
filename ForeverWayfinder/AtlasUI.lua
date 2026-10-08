@@ -33,8 +33,8 @@ end
 local function position(item,x,y)
   item:ClearAllPoints(); item:SetPoint("TOPLEFT",x,-y)
 end
-local function rectangle(parent,x,y,width,height,shade,layer)
-  local item=parent:CreateTexture(nil,layer or "BACKGROUND")
+local function rectangle(parent,x,y,width,height,shade,layer,subLevel)
+  local item=parent:CreateTexture(nil,layer or "BACKGROUND",nil,subLevel)
   item:SetPoint("TOPLEFT",x,-y); item:SetSize(width,height); paint(item,shade,true)
   return item
 end
@@ -96,7 +96,9 @@ local function percentage(done,total)
   return math.floor(value + .5) .. "%"
 end
 local function artwork(parent,x,y,width,height,file)
-  local item=parent:CreateTexture(nil,"BACKGROUND")
+  -- BackdropTemplate paints its dark fill on BACKGROUND. Sharing that layer
+  -- lets texture batching cover some paintings; keep art above the backdrop.
+  local item=parent:CreateTexture(nil,"ARTWORK",nil,-2)
   item:SetPoint("TOPLEFT",x,-y); item:SetSize(width,height)
   item:SetTexture(media.."Zones\\"..file); return item
 end
@@ -208,7 +210,7 @@ local function create()
 
   frame.heroShell=plate(frame,C,196,CW,158)
   frame.hero=artwork(frame.heroShell,3,3,CW-6,152,"1411")
-  frame.heroShade=rectangle(frame.heroShell,3,3,CW-6,152,colors.shadow,"BORDER")
+  frame.heroShade=rectangle(frame.heroShell,3,3,CW-6,152,colors.shadow,"ARTWORK",-1)
   frame.title=label(frame.heroShell,19,18,CW-38,"display",colors.ivory); frame.title:SetWordWrap(false)
   frame.subtitle=label(frame.heroShell,20,58,CW-40,"meta",colors.ivory)
   frame.description=label(frame.heroShell,20,89,CW-44,"body",colors.ivory); frame.description:SetHeight(60)

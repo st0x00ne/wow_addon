@@ -96,6 +96,46 @@ assert(panel.overview:IsShown() and not panel.list:IsShown() and panel.tabs.zone
   "Atlas did not open with the zone overview")
 assert(panel.hero.texture:find("Zones\\1411", 1, true) and durotarRow.icon.texture:find("Zones\\1411", 1, true),
   "selected zone artwork did not update")
+-- Same-layer textures can be batched in either order by the client. Check
+-- explicit draw order rather than accepting a correct path to hidden artwork.
+local function drawOrder(region)
+  local layers = {BACKGROUND=0, BORDER=1, ARTWORK=2, OVERLAY=3}
+  return assert(layers[region.layer]) * 16 + (region.subLevel or 0)
+end
+for _, object in ipairs(mock.objects) do
+  if object.kind == "Texture" and object.texture and object.texture:find("Media\\Zones\\", 1, true) then
+    assert(drawOrder(object) > drawOrder({layer="BACKGROUND"}),
+      "zone painting can be covered by the BackdropTemplate fill: " .. object.texture)
+  end
+end
+assert(panel.hero.parent == panel.heroShade.parent and drawOrder(panel.heroShade) > drawOrder(panel.hero),
+  "banner shading must be above the landscape")
+for _, text in ipairs({panel.title, panel.subtitle, panel.description}) do
+  assert(text.parent == panel.heroShade.parent and drawOrder(text) > drawOrder(panel.heroShade),
+    "banner text must stay above the landscape and shading")
+end
+local illustrated = {}
+for _, continentButton in ipairs({panel.kalimdor, panel.eastern}) do
+  mock.click(continentButton)
+  repeat
+    for _, row in ipairs(panel.zoneRows) do
+      if mock.visible(row) then
+        local art = assert(addon.AtlasPresentation[row.mapID], "zone presentation missing")[1]
+        local texture = "Interface\\AddOns\\ForeverWayfinder\\Media\\Zones\\" .. art
+        assert(row.icon.texture == texture, "zone thumbnail used another zone's artwork")
+        mock.click(row)
+        assert(panel.hero.texture == texture, "zone banner used another zone's artwork")
+        illustrated[row.mapID] = true
+      end
+    end
+    if panel.zoneNext.enabled then mock.click(panel.zoneNext) else break end
+  until false
+end
+for _, zone in ipairs(addon.Zones) do
+  assert(illustrated[zone[1]], "zone artwork was not exercised: " .. zone[2])
+end
+mock.click(panel.kalimdor)
+mock.click(durotarRow)
 assert(panel.progressLabel:GetText():find("CLASSIC", 1, true), "reference scope not stated")
 assert(panel.caveat:GetText():find("class and event quests separate", 1, true), "class exclusion not clear")
 mock.click(panel.classicBrowse)
@@ -186,5 +226,5 @@ if arg[2] == "preview" then
   if arg[3] == "atlas-quests" then mock.click(panel.catalogTabs.classic) end
   assert(loadfile(root .. "/tests/journal_preview_export.lua"))(mock, panel)
 else
-  print("PASS: Atlas overview, checklist navigation, reading sizes, unfinished filter, starter waypoints, class separation, completion and artwork")
+  print("PASS: Atlas overview, checklist navigation, reading sizes, unfinished filter, starter waypoints, class separation, completion, all zone paintings and artwork draw order")
 end

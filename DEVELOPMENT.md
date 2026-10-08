@@ -154,6 +154,9 @@ Export the Atlas artwork with `python tools/build_atlas_art.py` (requires Pillow
 It converts the frame to a 2048×1024 RGB TGA and crops the two source sheets into
 38 map-ID textures at 512×256. Sources and generation prompts live in `art`;
 `Data/AtlasPresentation.lua` maps each zone to its artwork and atmosphere text.
+Atlas paintings use the `ARTWORK` layer at sublevel -2, banner shading uses -1,
+and text uses the default sublevel. Keep paintings above the backdrop fill;
+sharing its `BACKGROUND` layer can let the client cover individual images.
 These paintings do not supply coordinates. Zephras Isle and Riverglades use
 cartography art until their landscapes are documented.
 
@@ -192,6 +195,9 @@ Special checks cover reward provenance, faction/class/level restrictions,
 prerequisite advancement, finished chains, retained utility rewards, item
 possession, priority ordering, categories, native tooltips, next-step waypoints,
 active quest actions, live refresh, and text layout.
+Atlas checks cover both continents, every zone painting, artwork draw order,
+banner shading and text order, completion, class separation, checklist filters,
+starter waypoints, reading sizes, and saved window position.
 
 `python tools/render_journal_preview.py --state quest` renders a layout preview
 from the actual mocked frame geometry and needs Pillow. `note`, `empty`,

@@ -2,7 +2,7 @@
 ## Title: Forever Wayfinder
 ## Notes: A personal Discovery Journal, quest markers, Classic chains, and zone suggestions for WoW Forever.
 ## Author: Forever Wayfinder contributors
-## Version: 0.7.0-alpha
+## Version: 0.7.1-alpha
 ## IconTexture: Interface\AddOns\ForeverWayfinder\Media\Icon
 ## SavedVariables: ForeverWayfinderJournal
 

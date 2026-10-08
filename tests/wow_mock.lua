@@ -12,7 +12,11 @@ function mock.object(kind,name,parent,template,layer)
 end
 function CreateFrame(kind,name,parent,template) return mock.object(kind,name,parent,template) end
 function CreateFont(name) return mock.object("Font",name) end
-function methods:CreateTexture(name,layer) return mock.object("Texture",name,self,nil,layer) end
+function methods:CreateTexture(name,layer,template,subLevel)
+  local value=mock.object("Texture",name,self,template,layer)
+  value.subLevel=subLevel or 0
+  return value
+end
 function methods:CreateMaskTexture() return mock.object("MaskTexture",nil,self) end
 function methods:AddMaskTexture(mask) self.mask=mask end
 function methods:CreateFontString(name,layer,font) local v=mock.object("FontString",name,self,nil,layer); v.font=font; return v end

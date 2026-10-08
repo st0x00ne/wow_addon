@@ -1,5 +1,24 @@
 # Sharing Forever Wayfinder
 
+## Atlas artwork fix · 0.7.1-alpha
+
+Fixes a draw-layer conflict that could hide individual zone thumbnails, the
+selected-zone landscape, and summary illustrations beneath their dark panels.
+Artwork now has an explicit order above panel fills, with banner shading above
+the painting and text above the shading. The original 38 paintings are unchanged.
+
+The regression check fails against the previous UI and passes with this fix;
+the full offline Lua suite passes. Both continents and every zone painting are
+exercised offline. An in-game check after installation and `/reload` confirmed
+that the previously hidden Atlas artwork is visible. This remains an alpha
+release for wider character and client testing.
+
+Install `dist/ForeverWayfinder-0.7.1-alpha.zip` by replacing the
+`ForeverWayfinder` addon folder, then `/reload` and open `/fw atlas`.
+The fix changes Lua only; a full restart is unnecessary for an existing 0.7.0
+installation with its artwork already installed. For a first install, exit WoW
+before extracting the package and reopen it afterward.
+
 ## Atlas release · 0.7.0-alpha
 
 This release gives the Atlas a new illustrated frame and 38 zone

@@ -37,7 +37,7 @@ def font_metrics(path):
 def render(nodes, output):
     bounds = nodes[0]["clip"]
     canvas = Image.new("RGBA", (round(bounds["w"]), round(bounds["h"])), (22, 15, 8, 255))
-    for node in sorted(nodes, key=lambda n: (n.get("strata", 0), n["level"], n["layer"], n["order"])):
+    for node in sorted(nodes, key=lambda n: (n.get("strata", 0), n["level"], n["layer"], n.get("subLevel", 0), n["order"])):
         r = node["rect"]
         x, y, w, h = r["x"], r["y"], r["w"], r["h"]
         if w <= 0 or h <= 0:
