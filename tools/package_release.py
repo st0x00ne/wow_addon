@@ -12,7 +12,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 ROOT = Path(__file__).resolve().parents[1]
 ADDON = ROOT / "ForeverWayfinder"
 TOC = ADDON / "ForeverWayfinder.toc"
-STAMP = (2026, 9, 27, 0, 0, 0)
+STAMP = (2026, 11, 4, 0, 0, 0)
 
 
 def release_files(include_art_sources: bool = False) -> tuple[str, list[tuple[Path, str]]]:
@@ -41,7 +41,7 @@ def release_files(include_art_sources: bool = False) -> tuple[str, list[tuple[Pa
     for source in sorted((ADDON / "Media").rglob("*")):
         if source.is_file():
             members.append((source, "ForeverWayfinder/" + source.relative_to(ADDON).as_posix()))
-    for name in ("README.md", "DEVELOPMENT.md", "LICENSE", "ATTRIBUTION.md"):
+    for name in ("README.md", "DEVELOPMENT.md", "RELEASE.md", "LICENSE", "ATTRIBUTION.md"):
         members.append((ROOT / name, "ForeverWayfinder/" + name))
     for source in sorted((ROOT / "tools").glob("*.py")):
         members.append((source, "ForeverWayfinder/Source/tools/" + source.name))
@@ -54,7 +54,6 @@ def release_files(include_art_sources: bool = False) -> tuple[str, list[tuple[Pa
         # Preserve the repository layout so the extracted source can be rebuilt.
         prefix = f"ForeverWayfinder-{version}-source/"
         members = [(source, prefix + source.relative_to(ROOT).as_posix()) for source, _ in members]
-        members.append((ROOT / "RELEASE.md", prefix + "RELEASE.md"))
     if not members or any(not source.is_file() for source, _ in members):
         raise FileNotFoundError("Release source file missing")
     return version, sorted(members, key=lambda item: item[1])
@@ -62,8 +61,8 @@ def release_files(include_art_sources: bool = False) -> tuple[str, list[tuple[Pa
 
 def build(output: Path | None = None, include_art_sources: bool = False) -> Path:
     version, members = release_files(include_art_sources)
-    suffix = "source" if include_art_sources else "beta"
-    output = output or ROOT / "dist" / f"ForeverWayfinder-{version}-{suffix}.zip"
+    suffix = "-source" if include_art_sources else ""
+    output = output or ROOT / "dist" / f"ForeverWayfinder-{version}{suffix}.zip"
     output.parent.mkdir(parents=True, exist_ok=True)
     expected = {name: source.read_bytes() for source, name in members}
     with ZipFile(output, "w") as archive:

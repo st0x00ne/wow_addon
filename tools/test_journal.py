@@ -12,13 +12,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def lua_executable(requested: str | None) -> str:
     if requested:
-        return requested
+        path = Path(requested)
+        return str(path.resolve()) if path.is_file() else requested
     for name in ("lua5.1", "lua", "fengari"):
         if found := shutil.which(name):
             return found
-    temporary = Path(os.environ.get("TEMP", "/tmp")) / "fw-lua-check/node_modules/.bin/fengari.cmd"
-    if temporary.is_file():
-        return str(temporary)
+    for temporary in (
+        Path(os.environ.get("TEMP", "/tmp")) / "fw-lua-check/node_modules/.bin/fengari.cmd",
+        ROOT / "dist/release-check/node_modules/.bin/fengari.cmd",
+    ):
+        if temporary.is_file():
+            return str(temporary.resolve())
     raise SystemExit("Install Lua 5.1 or Fengari, or pass --lua PATH.")
 
 
@@ -35,7 +39,7 @@ def main() -> None:
     parser.add_argument("--lua")
     args = parser.parse_args()
     executable = lua_executable(args.lua)
-    for name in ("journal_test.lua", "journal_ui_test.lua", "minimap_test.lua", "reading_test.lua", "class_priority_test.lua", "special_quests_test.lua", "atlas_test.lua"):
+    for name in ("journal_test.lua", "journal_ui_test.lua", "minimap_test.lua", "reading_test.lua", "class_priority_test.lua", "special_quests_test.lua", "atlas_test.lua", "expeditions_test.lua"):
         result = run_lua(executable, ROOT / "tests" / name)
         # Fengari's CLI can report Lua errors with exit code zero.
         if result.returncode or "PASS:" not in result.stdout or result.stderr:

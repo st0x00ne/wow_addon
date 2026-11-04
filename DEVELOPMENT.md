@@ -2,7 +2,7 @@
 
 A standalone quest companion and personal Discovery Journal for **World of Warcraft: Forever**. It adds quiet markers and optional context to Forever's quest log and remembers your own travels.
 
-This is a community beta for the Forever beta client (`1.60.1`, interface `16001`). It has been iterated from in-game testing, but still needs a clean install and wider character testing before a stable release.
+Version `0.8.0-rc.1` is the launch candidate for the Forever live client (`1.60.1`, interface `16001`). The installed `_forever_/Wow.exe` and active `wowf` entry in `.build.info` both reported `1.60.1.70790` on 2026-11-04. Earlier features were iterated in the beta; this candidate still needs a clean live install and in-game smoke test before being promoted to stable.
 
 ## What it does
 
@@ -18,9 +18,9 @@ This is a community beta for the Forever beta client (`1.60.1`, interface `16001
 
 For the Discord zip, extract it into:
 
-`World of Warcraft/_classic_beta_/Interface/AddOns/`
+`World of Warcraft/_forever_/Interface/AddOns/`
 
-The result must be `AddOns/ForeverWayfinder/ForeverWayfinder.toc`. You can also copy the [ForeverWayfinder](ForeverWayfinder) folder from this repository to `AddOns`. Enable it on the character selection AddOns screen, then open the regular quest log. The [TOC](ForeverWayfinder/ForeverWayfinder.toc) targets Forever's beta interface `16001`; when the client moves out of beta, its add-on directory and interface number may need updating.
+The result must be `AddOns/ForeverWayfinder/ForeverWayfinder.toc`. You can also copy the [ForeverWayfinder](ForeverWayfinder) folder from this repository to `AddOns`. Enable it on the character selection AddOns screen, then open the regular quest log. The [TOC](ForeverWayfinder/ForeverWayfinder.toc) targets interface `16001`, which is unchanged for the installed live `1.60.1` client. Use the live `_forever_` folder rather than the old beta installation.
 
 Fully exit and reopen WoW after installing this version so the new modules, artwork, and saved-variable declaration are loaded. Click **Journal** or **Where next?** at the bottom of the quest list, or **Chain** on an eligible Classic quest. `/fw journal` and `/fw journey` open the journal; `/fw` and `/fw where` open the suggestions; `/fw chain` opens the selected Classic chain. Clicking a recorded journal location, a Classic step location, or a quest in Where next? can replace your current user waypoint.
 
@@ -39,9 +39,11 @@ acceptance dates are recorded only when the addon sees an acceptance event.
 Earlier travel and completed quests are not reconstructed as invented history.
 
 WoW stores `ForeverWayfinderJournal` in its SavedVariables directory under
-`_classic_beta_/WTF/Account/<account>/SavedVariables/ForeverWayfinder.lua`.
+`_forever_/WTF/Account/<account>/SavedVariables/ForeverWayfinder.lua`.
 Normal logout and `/reload` let WoW write it to disk. Your personal records are
 outside the addon folder, so updating the Discord package preserves them.
+Beta and live SavedVariables are separate; this package does not migrate the
+old `_classic_beta_/WTF` journal into the live installation.
 Each player builds their own journal. Back up the saved-variable file with WoW
 closed if you want a copy of your journey.
 
@@ -181,6 +183,93 @@ checks to complete before calling the addon stable.
 
 ## Development checks
 
+### Expeditions development preview
+
+`/fw expeditions` (also `/fw dungeons` or `/fw raids`) opens the new reference.
+The Journal footer and Atlas also link to it. The initial directory groups
+Scarlet Monastery, Maraudon, and Dire Maul wings under their parent destination;
+Lower and Upper Blackrock Spire have separate entries. It lists 29 dungeon
+destinations and only the three announced first-tier raids. A client asset or
+Classic raid's existence does not establish its Forever availability.
+
+Hall of Thanes is the first detailed beta reference: four bosses, twelve reported
+equipment drops, and five quests. Quest rows show the client's active/completed
+status and can open an active quest. Loot entries offer native item tooltips and
+a saved **account-wide** wishlist; armor/weapon and wishlist filters narrow the
+list. Uncached items retain their bundled name while native item data loads.
+
+The **Map** tab now displays original Atlas floor plans for 25 destinations,
+including Hall of Thanes, Ruins of Lordaeron, Excavation Site, and Dalaran. Its
+34 sheets include wings and map parts. Previous/next controls switch sheets;
+**Zoom** opens the larger map window. Markers use Atlas's label positions and
+can show reference details. Hall of Thanes markers match the detailed bosses
+by NPC ID, because Atlas's printed boss numbers differ from the guide's order.
+Square sheets retain their aspect ratio in both sizes. These are beta/reference
+maps, not independently verified live layouts. No world-coordinate waypoint
+is inferred from a pixel on a map sheet.
+
+**Sketch** opens the original, schematic encounter sequence. Its positions
+are UI layout coordinates, **not boss locations or a floor plan**. Boss and quest
+circuits share that sequence; the quest circuit marks the first and final
+encounters as reminders. It does not calculate shortest paths, verify shortcuts,
+or set interior waypoints. Region map buttons open a reference map without
+replacing the player's waypoint. Use **Map** inside the sketch to return to the
+floor plan. Destinations without a suitable source remain explicitly uncharted.
+
+The unmodified Atlas BLP files, source data, original readme, GPL license text,
+and hash manifest are in `Media/Maps`. The pinned revision and selected sheets
+are declared in `art/ExpeditionMaps-import.json`. Run
+`python tools/import_expedition_maps.py` to import that revision, or add
+`--offline` to verify and regenerate from bundled inputs without network access.
+Every imported file is checked against its upstream Git blob hash. The importer
+parses Lua data as text and writes `Data/ExpeditionMaps.lua`; it never executes
+the downloaded add-on. Atlas itself is not a runtime dependency. Preserve its
+credits and notices in packages; see ATTRIBUTION.md and the upstream readme.
+
+`Data/Expeditions.lua` keeps source URLs, check dates, and separate provenance for
+the directory, encounters, quests, loot, and map status. Beta-reported drops do
+not have asserted rates. Other destinations display an explicit uncharted or
+uncataloged state. Announced raid opening dates are reference information,
+not a live server availability check. Imported item IDs never imply a verified
+drop relationship. Add launch verification per fact after checking the live game.
+
+### Seeing the UI without WoW
+
+There is no WoW rendering engine in the Lua interpreter. Our offline workflow
+executes the actual add-on Lua with `tests/wow_mock.lua`, exports its native-frame
+geometry through `tests/journal_preview_export.lua`, and draws the result with
+Pillow. It preserves frame hierarchy, clipping, draw order, inherited alpha,
+local textures, and text sizes. Georgia substitutes for the game's fonts; measured
+glyph widths also drive the layout checks. Native widget rendering, item stats,
+game-event behavior, protected APIs, and actual SavedVariables disk writes still
+require an in-game pass. Fengari uses Lua 5.3 semantics; it is not a replacement
+for checking Lua 5.1/client compatibility.
+
+On Windows, if Lua/Fengari and Pillow are not already installed:
+
+```powershell
+npm.cmd install --prefix "$env:TEMP/fw-lua-check" --ignore-scripts --no-audit --no-fund fengari-node-cli@0.1.0
+python -m pip install --target dist/preview-deps/python Pillow
+```
+
+Then run:
+
+```powershell
+python tools/test_journal.py
+python tools/preview_expeditions.py --open
+python tools/render_journal_preview.py --state expeditions-loot --text-size extra --output dist/loot-extra.png
+```
+
+The gallery is `dist/expeditions-preview/index.html`: nine states at all three
+reading sizes (27 PNGs). `--open` opens the completed gallery in your default
+browser; omit it to render only. Its controls select static captures; the picture itself
+is not clickable. The Lua suite separately exercises the actual interaction
+handlers. The gallery build also runs the Expeditions checks with measured font
+metrics before capturing images. Dependencies and outputs stay in temporary or
+ignored directories and are excluded from the install package.
+
+### Automated Lua checks
+
 Run `python tools/test_journal.py` with Lua 5.1 or Fengari available; `--lua PATH`
 selects an executable. The tests cover recording, duplicate events, filters,
 notes, character isolation, serialized cold loads, newer-schema protection,
@@ -198,6 +287,11 @@ active quest actions, live refresh, and text layout.
 Atlas checks cover both continents, every zone painting, artwork draw order,
 banner shading and text order, completion, class separation, checklist filters,
 starter waypoints, reading sizes, and saved window position.
+Expeditions checks cover roster and provenance, all 34 map sheets, marker identity,
+sheet paging, enlarged maps, aspect ratio, literal search, origin filters,
+boss selection, quest reminders, loot types, wishlist filtering and cold loads,
+late item tooltips, live quest states, map actions, empty/raid state isolation,
+navigation, native-frame reuse, all reading sizes, scrolling, and screen fit.
 
 `python tools/render_journal_preview.py --state quest` renders a layout preview
 from the actual mocked frame geometry and needs Pillow. `note`, `empty`,

@@ -1,0 +1,266 @@
+{
+  "repository": "arithmandar/Atlas-Kalimdor-and-Eastern-Kingdoms",
+  "commit": "d4b16efa424e9116fc895543a6a5faa3f746cf1a",
+  "checked": "2026-10-27",
+  "license": "GPL-2.0-or-later",
+  "source": "Data/Data-ClassicForever.lua",
+  "sourceBlob": "5818065a6fb7d6b86c7f4bd8d4bc9c9231e26fa2",
+  "groups": {
+    "hall-of-thanes": [
+      "CF_HallofThanes"
+    ],
+    "ruins-of-lordaeron": [
+      "CF_RuinsofLordaeron"
+    ],
+    "excavation-site": [
+      "CF_ExcavationSiteWetlands"
+    ],
+    "city-of-dalaran": [
+      "CF_CityofDalaranA",
+      "CF_CityofDalaranB"
+    ],
+    "ragefire-chasm": [
+      "CF_RagefireChasm"
+    ],
+    "wailing-caverns": [
+      "CF_WailingCaverns"
+    ],
+    "deadmines": [
+      "CL_TheDeadmines"
+    ],
+    "shadowfang-keep": [
+      "CL_ShadowfangKeep"
+    ],
+    "stockade": [
+      "CF_TheStockade"
+    ],
+    "blackfathom-deeps": [
+      "CL_BlackfathomDeepsA",
+      "CL_BlackfathomDeepsB",
+      "CL_BlackfathomDeepsC"
+    ],
+    "gnomeregan": [
+      "CF_Gnomeregan"
+    ],
+    "razorfen-kraul": [
+      "CF_RazorfenKraul"
+    ],
+    "scarlet-monastery": [
+      "CL_SMGraveyard",
+      "CL_SMLibrary",
+      "CL_SMArmory",
+      "CL_SMCathedral"
+    ],
+    "razorfen-downs": [
+      "CF_RazorfenDowns"
+    ],
+    "uldaman": [
+      "CF_Uldaman"
+    ],
+    "zul-farrak": [
+      "CL_ZulFarrak"
+    ],
+    "maraudon": [
+      "CF_MaraudonA",
+      "CF_MaraudonB"
+    ],
+    "sunken-temple": [
+      "CL_TheSunkenTemple"
+    ],
+    "blackrock-depths": [
+      "CL_BlackrockDepths"
+    ],
+    "lower-blackrock-spire": [
+      "CL_BlackrockSpireLower"
+    ],
+    "upper-blackrock-spire": [
+      "CL_BlackrockSpireUpper"
+    ],
+    "dire-maul": [
+      "CL_DireMaulEast",
+      "CL_DireMaulWest",
+      "CL_DireMaulNorth"
+    ],
+    "scholomance": [
+      "CL_Scholomance"
+    ],
+    "stratholme": [
+      "CL_Stratholme"
+    ],
+    "onyxias-lair": [
+      "CL_OnyxiasLair"
+    ]
+  },
+  "images": [
+    {
+      "name": "CF_CityofDalaranA.blp",
+      "sha": "b184a9e7c42ffc00d69ebc364556dc1efb2dfd0a",
+      "size": 350724
+    },
+    {
+      "name": "CF_CityofDalaranB.blp",
+      "sha": "0effdf01b408db43ef007a7757015eaf353ccf15",
+      "size": 175948
+    },
+    {
+      "name": "CF_ExcavationSiteWetlands.blp",
+      "sha": "906c224121204c7c93a801897b2f96f89d2fc716",
+      "size": 175948
+    },
+    {
+      "name": "CF_Gnomeregan.blp",
+      "sha": "5975a3645acb8013689adf97b115a7a361115189",
+      "size": 350724
+    },
+    {
+      "name": "CF_HallofThanes.blp",
+      "sha": "67d1cc2b5537ff0e39318023f65e3d9c25bd56d7",
+      "size": 350724
+    },
+    {
+      "name": "CF_MaraudonA.blp",
+      "sha": "1df32c8516f620c1f8d1b22f4e906e802559a0a7",
+      "size": 350724
+    },
+    {
+      "name": "CF_MaraudonB.blp",
+      "sha": "fa27229f5ba9f8455e42b0f9ffa2d2d15d2875be",
+      "size": 350724
+    },
+    {
+      "name": "CF_RagefireChasm.blp",
+      "sha": "861058e9b21f51b848a13dadd7e8c2e9218fc871",
+      "size": 350724
+    },
+    {
+      "name": "CF_RazorfenDowns.blp",
+      "sha": "6bd760f52d283cf7306262a1aa2d67ffd9730d23",
+      "size": 350724
+    },
+    {
+      "name": "CF_RazorfenKraul.blp",
+      "sha": "5a3f1d7bd640543f1c7bbc30abd77215c7596365",
+      "size": 350724
+    },
+    {
+      "name": "CF_RuinsofLordaeron.blp",
+      "sha": "c248a1d48c04a6dd0faead84f5c2d6f13141a6ea",
+      "size": 175948
+    },
+    {
+      "name": "CF_TheStockade.blp",
+      "sha": "c4309472d0f134df4570a485e623e31692273fed",
+      "size": 175948
+    },
+    {
+      "name": "CF_Uldaman.blp",
+      "sha": "23fdac9759722106d163e1c1470af85970481a3a",
+      "size": 350724
+    },
+    {
+      "name": "CF_WailingCaverns.blp",
+      "sha": "435036d6d5d9a146d61010791bee51e6a69a0360",
+      "size": 350724
+    },
+    {
+      "name": "CL_BlackfathomDeepsA.blp",
+      "sha": "feaaa2c3c2bfc5f985cf4c17ae398dd649e12d76",
+      "size": 175948
+    },
+    {
+      "name": "CL_BlackfathomDeepsB.blp",
+      "sha": "46d939f75dbb860b5576d2fc604cbc0afafcc9dd",
+      "size": 175948
+    },
+    {
+      "name": "CL_BlackfathomDeepsC.blp",
+      "sha": "767adcbbd2d0a6ca9314a915a973f6d8f90d425d",
+      "size": 175948
+    },
+    {
+      "name": "CL_BlackrockDepths.blp",
+      "sha": "d6ddc17afd44d4c8ceff17cefa4d3ba9b3249573",
+      "size": 175948
+    },
+    {
+      "name": "CL_BlackrockSpireLower.blp",
+      "sha": "0d1f74c031f5023ab1186a9639e5d53d44fa9a96",
+      "size": 350724
+    },
+    {
+      "name": "CL_BlackrockSpireUpper.blp",
+      "sha": "96b2f7dedb7e9bb03624157528ccf3421367b37d",
+      "size": 350724
+    },
+    {
+      "name": "CL_DireMaulEast.blp",
+      "sha": "345bf9ae8ab0aaaae55dd41bf2b14511e22d33c2",
+      "size": 350724
+    },
+    {
+      "name": "CL_DireMaulNorth.blp",
+      "sha": "6a0a60e5be4e878789edd57d31d6db13dbe2e626",
+      "size": 350724
+    },
+    {
+      "name": "CL_DireMaulWest.blp",
+      "sha": "098c44e76e0f355c71ae9dde5e8f4b130acc71a5",
+      "size": 350724
+    },
+    {
+      "name": "CL_OnyxiasLair.blp",
+      "sha": "97691ea5e27a34f2dfa776bdd236cdab63777ef0",
+      "size": 175948
+    },
+    {
+      "name": "CL_SMArmory.blp",
+      "sha": "2ab21468869a5a70982f6afffc5d11e43ba8cb45",
+      "size": 350724
+    },
+    {
+      "name": "CL_SMCathedral.blp",
+      "sha": "9d6722502350a27f4dea097899923047f772e80e",
+      "size": 350724
+    },
+    {
+      "name": "CL_SMGraveyard.blp",
+      "sha": "b059573886e153eb4a4b8583e52f6f515e67e59d",
+      "size": 350724
+    },
+    {
+      "name": "CL_SMLibrary.blp",
+      "sha": "963dcb1a5fdb1fa917ef8d28c3985ce6f6515f3e",
+      "size": 350724
+    },
+    {
+      "name": "CL_Scholomance.blp",
+      "sha": "16782aef646fc6f10e20bb4012883b6fcaf82ed1",
+      "size": 350724
+    },
+    {
+      "name": "CL_ShadowfangKeep.blp",
+      "sha": "4ce4d26deba38114a2b4b336bcd7218d6a16429a",
+      "size": 350724
+    },
+    {
+      "name": "CL_Stratholme.blp",
+      "sha": "b9cd5cc706595f8daed19c012307c0ca91dc1018",
+      "size": 350724
+    },
+    {
+      "name": "CL_TheDeadmines.blp",
+      "sha": "6ae1af9daddaaedcad3ab2e046569c69276ed4a4",
+      "size": 175948
+    },
+    {
+      "name": "CL_TheSunkenTemple.blp",
+      "sha": "a2d07bb925209cb6e859ee29c59d111d156178d9",
+      "size": 350724
+    },
+    {
+      "name": "CL_ZulFarrak.blp",
+      "sha": "3c3e18beb141d5f111dc890f0e5b92bf5364c1cb",
+      "size": 350724
+    }
+  ]
+}

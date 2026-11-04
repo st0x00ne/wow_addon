@@ -1,5 +1,71 @@
 # Sharing Forever Wayfinder
 
+## Launch candidate · 0.8.0-rc.1 · November 4, 2026
+
+Upload **`dist/ForeverWayfinder-0.8.0-rc.1.zip`**. On CurseForge, choose the
+**WoW Forever** flavor, game version **1.60.1**, and **Beta** release type until
+the live-world smoke test is complete. The separate `-source.zip` archive is for
+source distribution; the main zip is the installable addon.
+
+The local live installation was checked on November 4: `_forever_/Wow.exe` and
+the active `wowf` product entry in `.build.info` both report `1.60.1.70790`.
+The interface target remains `16001`. This verifies the installed build and
+package target; it does not constitute an in-game compatibility test.
+
+### Changes since 0.7.1-alpha
+
+- Add Expeditions: a searchable directory of 29 dungeon destinations and the
+  three announced first-tier raids, linked from the Journal and Atlas.
+- Include 34 original Atlas map sheets for 25 destinations, with selectable
+  reference markers, map-part/wing controls, and an enlarged view.
+- Add Hall of Thanes boss notes, twelve reported loot entries, five quests,
+  an account wishlist, and schematic boss/quest itineraries.
+- Preserve shared reading sizes and saved Journal/Atlas settings. Update the
+  install instructions for the live `_forever_` client.
+
+Maps, boss positions, quest details, and drop sources remain labeled beta or
+Classic references where applicable. Unknown interiors remain uncharted.
+The optional Sketch is an encounter sequence, not a surveyed route.
+
+### Install
+
+Fully exit WoW, then extract the main zip into:
+
+`World of Warcraft/_forever_/Interface/AddOns/`
+
+The result must be `AddOns/ForeverWayfinder/ForeverWayfinder.toc`. Replace the
+old addon folder when updating, then reopen the game. Do not delete the WTF
+folder; that contains personal saved data. Installing this package does not
+copy the separate beta journal into the live game's SavedVariables.
+
+### Validation and first live check
+
+The eight offline Lua suites cover existing features and Expeditions, including
+map paging/zoom, marker identity, item loading, wishlist cold loads, navigation,
+reading sizes, and screen fit. The map importer verifies all pinned source and
+texture hashes. The packager verifies one installable folder, the TOC load list,
+all assets, notices, source inclusion, and ZIP integrity.
+
+After live access opens: enable the addon; open `/fw journal`, `/fw atlas`, and
+`/fw expeditions`; select a map marker and hover a loot item. Write a field note,
+save a wishlist item, and `/reload` to confirm persistence. Open a quest and its
+chain, and check the quest-log buttons. Capture any Lua error before promoting
+this candidate to stable.
+
+Atlas credits, original textures, source data, and license/readme notices are
+included. Its upstream readme's notification request is preserved for review
+when publishing; no message is sent by the packaging tools.
+
+### Upload description
+
+Forever Wayfinder 0.8.0-rc.1 is the launch candidate for WoW Forever 1.60.1.
+Explore an illustrated Atlas, keep a personal Discovery Journal, find useful
+quest chains, and browse dungeon/raid maps in Expeditions. The package includes
+34 Atlas map sheets and a Hall of Thanes boss, quest, and loot reference. Open
+the minimap compass or use `/fw journal`, `/fw atlas`, and `/fw expeditions`.
+Standalone: Questie and Atlas are not required. Encounter and reward data is
+reference information pending live verification. Live-world testing is pending.
+
 ## Atlas artwork fix · 0.7.1-alpha
 
 Fixes a draw-layer conflict that could hide individual zone thumbnails, the

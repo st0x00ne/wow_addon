@@ -289,7 +289,8 @@ local function create()
     if state.view=="class" then frame:Hide(); if addon.ShowWhereNext then addon.ShowWhereNext() end
     else openMap(state.mapID) end
   end)
-  frame.journal=control(frame,"Personal journal",R,BOTTOM,RW,function() frame:Hide(); addon.ToggleJournal() end)
+  frame.journal=control(frame,"Journal",R,BOTTOM,110,function() frame:Hide(); addon.ToggleJournal() end)
+  frame.expeditions=control(frame,"Expeditions",R+118,BOTTOM,120,function() frame:Hide(); addon.ShowExpeditions() end)
   local saved=addon.Journal.Database().atlasPosition
   if saved and saved.point and saved.relativePoint then
     frame:ClearAllPoints(); frame:SetPoint(saved.point,UIParent,saved.relativePoint,saved.x or 0,saved.y or 0)

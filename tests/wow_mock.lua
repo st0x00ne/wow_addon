@@ -293,7 +293,7 @@ function QuestMapFrame_ShowQuestDetails(id) mock.openQuest=id end
 QuestMapFrame=nil; QuestScrollFrame=nil
 function mock.load(root, withUI)
   local addon={}
-  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/ClassQuestPriorities.lua","Data/SpecialQuests.lua","Data/Zones.lua","Data/AtlasPresentation.lua","Data/AtlasQuestCatalog.lua","Data/ForeverQuests.lua","Data/VerifiedRewards.lua","Core.lua","Journal.lua","Atlas.lua"}) do
+  for _,file in ipairs({"Data/ClassicQuests.lua","Data/ClassicChainDetails.lua","Data/QuestOpportunities.lua","Data/ClassQuestPriorities.lua","Data/SpecialQuests.lua","Data/Zones.lua","Data/AtlasPresentation.lua","Data/AtlasQuestCatalog.lua","Data/ForeverQuests.lua","Data/VerifiedRewards.lua","Data/Expeditions.lua","Data/ExpeditionMaps.lua","Core.lua","Journal.lua","Atlas.lua","Expeditions.lua"}) do
     assert(loadfile(root.."/ForeverWayfinder/"..file))("ForeverWayfinder",addon)
   end
   if withUI then
@@ -301,6 +301,7 @@ function mock.load(root, withUI)
     assert(loadfile(root.."/ForeverWayfinder/UI.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/JournalUI.lua"))("ForeverWayfinder",addon)
     assert(loadfile(root.."/ForeverWayfinder/AtlasUI.lua"))("ForeverWayfinder",addon)
+    assert(loadfile(root.."/ForeverWayfinder/ExpeditionsUI.lua"))("ForeverWayfinder",addon)
   end
   mock.fire("ADDON_LOADED","ForeverWayfinder")
   mock.fire("PLAYER_LOGIN")

@@ -767,7 +767,10 @@ createBook = function()
   book.welcomeBody:SetText("Your journal grows as you explore, accept quests, and find your way through Azeroth.\n\nChoose a recorded moment on the left, or write a field note of your own.")
   book.welcomeBody:ClearAllPoints()
   book.welcomeBody:SetPoint("TOPLEFT", 70, -298 - book.welcomeTitle:GetStringHeight() - 18)
-  book.footer = font(book.body, 11, ink.pale, 58, 615, 798)
+  book.footer = font(book.body, 11, ink.pale, 58, 615, 550)
+  book.expeditions = button(book.body, "Expeditions", 622, 607, 138, function()
+    if saveDraft(true) then book:Hide(); if addon.ShowExpeditions then addon.ShowExpeditions() end end
+  end)
   button(book.body, "Atlas", 770, 607, 105, function()
     if saveDraft(true) then book:Hide(); if addon.ShowAtlas then addon.ShowAtlas() end end
   end)

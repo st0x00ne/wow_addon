@@ -36,6 +36,12 @@ for order,v in ipairs(mock.objects) do
   local p=v
   while p and p~=book do p=p.parent end
   if p==book and mock.visible(v) and v.alpha~=0 then
+    local opacity,ancestorAlpha=1,v
+    while ancestorAlpha do
+      opacity=opacity*(ancestorAlpha.alpha or 1)
+      if ancestorAlpha==book then break end
+      ancestorAlpha=ancestorAlpha.parent
+    end
     local layer=({BACKGROUND=0,BORDER=1,ARTWORK=2,OVERLAY=3})[v.layer or "BACKGROUND"] or 0
     local level=(v.kind=="Texture" or v.kind=="FontString") and v.parent:GetFrameLevel() or v:GetFrameLevel()
     local stratum,parent=0,v
@@ -59,7 +65,7 @@ for order,v in ipairs(mock.objects) do
     result[#result+1]={rect=rect(v),clip=clip,kind=v.kind,template=v.template,layer=layer,subLevel=v.subLevel or 0,level=level,strata=stratum,order=order,
       text=v.text,color=v.color,texture=v.texture,texCoord=v.texCoord,vertexColor=v.vertexColor,backdrop=v.backdropColor,border=v.borderColor,
       fontSize=v.fontSize or (v.normalFont and v.normalFont.fontSize),font=v.font,spacing=v.spacing,
-      wrap=v.wrap,justify=v.justifyH,vjustify=v.justifyV,checked=v.checked,enabled=v.enabled,alpha=v.alpha,masked=v.mask~=nil}
+      wrap=v.wrap,justify=v.justifyH,vjustify=v.justifyV,checked=v.checked,enabled=v.enabled,alpha=opacity,masked=v.mask~=nil}
   end
 end
 print(json(result))

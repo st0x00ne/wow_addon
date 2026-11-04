@@ -26,6 +26,31 @@ the named reward references are not guaranteed live Forever offers.
 World of Warcraft and its art are trademarks and property of Blizzard
 Entertainment. Forever Wayfinder is a community addon.
 
+The Expeditions development catalog was checked on 2026-10-26 against Blizzard's
+[dungeon announcement](https://news.blizzard.com/en-us/article/24303862/world-of-warcraft-forever-whats-next-panel-recap),
+[raid overview](https://news.blizzard.com/en-gb/article/24303009/world-of-warcraft-forever-raid-overviewlocations-raid-sizes-and-attunement),
+and Wowhead's [Forever dungeon overview](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details).
+Hall of Thanes encounter, item-source, and quest facts reference
+[Jurdi's beta guide](https://www.wowhead.com/forever/guide/hall-of-thanes-dungeon-overview-location-rewards)
+(updated 2026-09-29); the item's or quest's linked database record supplies its ID.
+Descriptions are brief original summaries. The original encounter diagram uses
+native frames and the existing Wayfinder frame artwork. Guide screenshots and
+Santiago Reyes's fan maps are not embedded.
+
+The 34 original dungeon/raid map sheets and derived label positions were imported
+on 2026-10-27 from [Atlas Kalimdor & Eastern Kingdoms](https://github.com/arithmandar/Atlas-Kalimdor-and-Eastern-Kingdoms),
+revision `d4b16efa424e9116fc895543a6a5faa3f746cf1a`. Atlas credits Dan Gilbert,
+Lothaer, Arith Hsu, and the Atlas Team. The selected textures are unmodified BLP
+files in `Media/Maps`; their embedded artist credits remain intact. The original
+Forever data source, readme, GPL-2.0 text, and per-file hash manifest accompany
+them. Atlas's data source grants GPL-2.0-or-later; the generated subset in
+`Data/ExpeditionMaps.lua` is distributed under this project's GPL-3.0. The map
+inputs and original notices retain their stated upstream terms. The upstream
+readme also requests credit and notification when including its files in a
+product; that request is preserved with the imported files. No notification has
+been sent by this tooling. `tools/import_expedition_maps.py` verifies all selected
+inputs against pinned Git blob hashes and generates the standalone reference.
+
 The compass icon and Discovery Journal book background are original generated
 artwork for Forever Wayfinder. Full-size PNG sources are retained in the repository's
 `art` folder and included in the separate full source archive's `art` folder.

@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Forever Wayfinder
-## Notes: A personal Discovery Journal, quest markers, Classic chains, and zone suggestions for WoW Forever.
+## Notes: An illustrated Atlas, Discovery Journal, dungeon maps, quest chains, and zone suggestions for WoW Forever.
 ## Author: Forever Wayfinder contributors
-## Version: 0.7.1-alpha
+## Version: 0.8.0-rc.1
 ## IconTexture: Interface\AddOns\ForeverWayfinder\Media\Icon
 ## SavedVariables: ForeverWayfinderJournal
 
@@ -16,10 +16,14 @@ Data\AtlasPresentation.lua
 Data\AtlasQuestCatalog.lua
 Data\ForeverQuests.lua
 Data\VerifiedRewards.lua
+Data\Expeditions.lua
+Data\ExpeditionMaps.lua
 Core.lua
 Journal.lua
 Atlas.lua
+Expeditions.lua
 ReadingStyle.lua
 UI.lua
 JournalUI.lua
 AtlasUI.lua
+ExpeditionsUI.lua

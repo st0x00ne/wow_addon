@@ -13,6 +13,7 @@ from test_journal import ROOT, lua_executable, run_lua
 
 # Optional local development dependency, kept outside the addon package.
 sys.path.append(str(Path(os.environ.get("TEMP", "/tmp")) / "fw-journal-preview"))
+sys.path.append(str(ROOT / "dist/preview-deps/python"))
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -50,8 +51,9 @@ def render(nodes, output):
         if kind == "Texture":
             texture = str(node.get("texture") or "")
             media_prefix = "Interface\\AddOns\\ForeverWayfinder\\Media\\"
-            local_texture = ROOT / "ForeverWayfinder/Media" / (texture.removeprefix(media_prefix).replace("\\", "/") + ".tga")
-            if texture.startswith(media_prefix) and local_texture.is_file():
+            local_base = ROOT / "ForeverWayfinder/Media" / texture.removeprefix(media_prefix).replace("\\", "/")
+            local_texture = next((path for path in (local_base, Path(str(local_base)+".tga"), Path(str(local_base)+".blp")) if path.is_file()), None) if texture.startswith(media_prefix) else None
+            if local_texture:
                 artwork = Image.open(local_texture).convert("RGBA")
                 if uv := node.get("texCoord"):
                     artwork = artwork.crop((round(uv[0]*artwork.width),round(uv[2]*artwork.height),
@@ -128,6 +130,8 @@ def render(nodes, output):
                 vertical = (h-line_height*len(lines))/2 if is_native_button or node.get("vjustify") == "MIDDLE" else -2
                 ty=y+i*line_height + vertical
                 draw.text((round(tx),round(ty)),line,font=font,fill=fill)
+        if (opacity := node.get("alpha", 1)) < 1:
+            layer.putalpha(layer.getchannel("A").point(lambda value: round(value * opacity)))
         clip = node["clip"]
         box = (round(max(0,clip["x"])),round(max(0,clip["y"])),round(min(canvas.width,clip["x"]+clip["w"])),round(min(canvas.height,clip["y"]+clip["h"])))
         if box[2]>box[0] and box[3]>box[1]:
@@ -139,11 +143,11 @@ def render(nodes, output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua")
-    parser.add_argument("--state",choices=("quest","note","empty","chain","where","class","special","book","atlas","atlas-quests","atlas-class"),default="quest")
+    parser.add_argument("--state",choices=("quest","note","empty","chain","where","class","special","book","atlas","atlas-quests","atlas-class","expeditions","expeditions-fullmap","expeditions-lordaeron","expeditions-dalaran","expeditions-loot","expeditions-quests","expeditions-route","expeditions-raid","expeditions-empty"),default="quest")
     parser.add_argument("--text-size",choices=("standard","large","extra"),default="standard")
     parser.add_argument("--output",type=Path,default=ROOT/"dist/journal-layout-preview.png")
     args=parser.parse_args()
-    script="atlas_test.lua" if args.state.startswith("atlas") else "special_quests_test.lua" if args.state=="special" else "class_priority_test.lua" if args.state=="class" else (
+    script="expeditions_test.lua" if args.state.startswith("expeditions") else "atlas_test.lua" if args.state.startswith("atlas") else "special_quests_test.lua" if args.state=="special" else "class_priority_test.lua" if args.state=="class" else (
         "reading_test.lua" if args.state in ("chain","where","book") else "journal_ui_test.lua")
     with tempfile.TemporaryDirectory(prefix="fw-reading-preview-") as folder:
         metrics=Path(folder)/"font-metrics.lua"

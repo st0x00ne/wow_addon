@@ -1,0 +1,4 @@
+# Preserve pinned upstream inputs and notices byte-for-byte on every platform.
+ForeverWayfinder/Media/Maps/*.txt -text
+ForeverWayfinder/Media/Maps/Atlas-Data-ClassicForever.txt -whitespace
+ForeverWayfinder/Media/Maps/Atlas-Readme.txt -whitespace

@@ -70,6 +70,7 @@ function style.Refresh()
   if addon.RefreshPanelReadingStyle then addon.RefreshPanelReadingStyle() end
   if addon.RefreshJournalReadingStyle then addon.RefreshJournalReadingStyle() end
   if addon.RefreshAtlasReadingStyle then addon.RefreshAtlasReadingStyle() end
+  if addon.RefreshExpeditionsReadingStyle then addon.RefreshExpeditionsReadingStyle() end
 end
 
 function style.SetPreset(key)
